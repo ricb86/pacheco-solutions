@@ -1,0 +1,10 @@
+{
+  "tasks": {
+    "start": "deno run --allow-read --allow-write --allow-run --allow-env start.ts",
+    "dev": "deno run --allow-read --allow-write --allow-run --allow-env --watch src/index.ts"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  }
+}
