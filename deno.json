@@ -1,10 +1,13 @@
 {
   "tasks": {
-    "start": "deno run --allow-read --allow-write --allow-run --allow-env start.ts",
-    "dev": "deno run --allow-read --allow-write --allow-run --allow-env --watch src/index.ts"
+    "start": "deno run -A --no-check src/index.ts",
+    "dev": "deno run -A --watch src/index.ts",
+    "seed": "deno run -A --no-check scripts/seed.ts",
+    "check": "deno check src/index.ts scripts/seed.ts",
+    "security:check": "deno run -A --no-check scripts/security-check.ts"
   },
+  "nodeModulesDir": "auto",
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact"
+    "strict": true
   }
 }

@@ -1,87 +1,92 @@
-import 'module-alias/register';
-import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
-import { connectDatabase } from '@config/database';
-import { errorHandler } from '@middlewares/errorHandler';
-import { logger } from '@utils/logger';
-import routes from '@routes';
+/**
+ * ExtAT Platform — Entry point
+ *
+ * Correções em relação ao original:
+ *   - imports de módulos inexistentes removidos (module-alias, helmet,
+ *     compression, express-rate-limit, dotenv — nenhum estava instalado)
+ *   - substituídos por equivalentes internos (src/middleware/security.ts,
+ *     src/middleware/rateLimit.ts) e por carregamento de .env em
+ *     src/config/env.ts
+ *   - caminhos @config/@routes/@utils → imports relativos
+ *   - health check e tratamento de erros mantidos
+ */
 
-dotenv.config({ path: '.env' });
+import express from 'express';
+import { config } from './config/env.ts';
+import { connectDatabase } from './config/database.ts';
+import { logger } from './utils/logger.ts';
+import routes from './routes/index.ts';
+import {
+  securityHeaders,
+  corsMiddleware,
+} from './middleware/security.ts';
+import { createRateLimiter } from './middleware/rateLimit.ts';
+import { notFound, errorHandler } from './middleware/errorHandler.ts';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
-// Security middleware
-app.use(helmet());
-app.use(compression());
+app.disable('x-powered-by');
+app.use(securityHeaders);
+app.use(corsMiddleware);
+app.use(express.json({ limit: '100kb' }));
 
-// Rate limiting - Configuração por ambiente
-const isProduction = process.env.NODE_ENV === 'production';
-const limiter = rateLimit({
-  windowMs: isProduction ? 15 * 60 * 1000 : 60 * 60 * 1000, // 15min em prod, 1h em dev
-  max: isProduction ? 100 : 1000, // Limites por IP
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-    retryAfter: isProduction ? '15 minutes' : '1 hour'
-  }
+// Rate limit global (janela de 1h em dev, 15min em produção)
+const globalLimiter = createRateLimiter({
+  windowMs: config.isProduction ? 15 * 60 * 1000 : 60 * 60 * 1000,
+  max: config.isProduction ? 100 : 1000,
+  message: 'Muitas requisições deste IP. Tente novamente mais tarde.',
 });
-
-app.use('/api', limiter);
-
-// CORS configurável via variáveis de ambiente
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permitir requests sem origem (mobile apps, etc)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-app.use(express.json({ limit: '10kb' })); // Limite de tamanho do body
+app.use(globalLimiter);
 
 // Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ 
-    status: 'ok', 
+app.get('/health', (_req, res) => {
+  res.status(200).json({
+    status: 'ok',
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Routes
-app.use(routes);
-
-// Error handler - deve ser o último middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  logger.error(`[${req.method}] ${req.url} - ${err.message}`);
-  errorHandler(err, req, res, next);
+// Página inicial — visão geral da API
+app.get('/', (_req, res) => {
+  res.status(200).json({
+    name: 'ExtAT Platform',
+    version: '1.0.0',
+    docs: {
+      health: 'GET /health',
+      register: 'POST /auth/register',
+      login: 'POST /auth/login',
+      meu_perfil: 'GET /users/profile',
+      atualizar_perfil: 'PATCH /users/profile',
+      usuario_por_id: 'GET /users/:id',
+      listar_usuarios: 'GET /users (admin)',
+      transacoes: 'GET /transactions',
+      nova_transferencia: 'POST /transactions/create',
+    },
+  });
 });
 
-// Start server
+// Rotas da API
+app.use(routes);
+
+// 404 + handler de erros (devem vir por último)
+app.use(notFound);
+app.use(errorHandler);
+
 async function start() {
-  try {
-    await connectDatabase();
-    
-    app.listen(PORT, () => {
-      logger.info(`🚀 Servidor rodando em http://localhost:${PORT}`);
-      logger.info(`   Ambiente: ${process.env.NODE_ENV || 'development'}`);
-      logger.info(`   JWT Secret configurado: ${!!process.env.JWT_SECRET}`);
-    });
-  } catch (error) {
-    logger.error('Erro ao iniciar servidor:', error);
-    process.exit(1);
-  }
+  await connectDatabase();
+
+  app.listen(config.port, () => {
+    logger.info('═════════════════════════════════════════════════');
+    logger.info('        EXTAT PLATFORM — SERVIDOR ATIVO           ');
+    logger.info('═════════════════════════════════════════════════');
+    logger.info(`🚀 URL principal:    http://localhost:${config.port}`);
+    logger.info(`📊 Health check:     http://localhost:${config.port}/health`);
+    logger.info(`🔐 Login:            http://localhost:${config.port}/auth/login`);
+    logger.info(`💰 Transações:       http://localhost:${config.port}/transactions`);
+    logger.info(`   Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    logger.info('═════════════════════════════════════════════════');
+  });
 }
 
 start();

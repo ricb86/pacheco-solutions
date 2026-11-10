@@ -1,10 +1,25 @@
+/**
+ * ExtAT Platform — Rotas de transações
+ */
+
 import { Router } from 'express';
-import { createTransaction, getTransactions } from '../services/transaction.service.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.middleware.js';
+import {
+  createTransaction,
+  getTransactions,
+} from '../services/transaction.service.ts';
+import { authMiddleware } from '../middleware/auth.middleware.ts';
+import { validateBody } from '../middleware/validation.ts';
 
 const router = Router();
 
-router.get('/', authMiddleware, getTransactions);
-router.post('/create', authMiddleware, createTransaction);
+// Todas as rotas de transações exigem autenticação
+router.use(authMiddleware);
+
+router.get('/', getTransactions);
+router.post(
+  '/create',
+  validateBody('receiver_username', 'amount'),
+  createTransaction,
+);
 
 export default router;
