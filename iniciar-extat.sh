@@ -133,13 +133,16 @@ start_server() {
   echo "        INICIANDO EXTAT PLATFORM                       "
   echo "═══════════════════════════════════════════════════════"
   echo ""
-  echo "📍 URL Principal:    http://localhost:$PORT"
+  echo "🖥️  Interface web:    http://localhost:$PORT"
   echo "📊 Health Check:     http://localhost:$PORT/health"
   echo "🔐 Login demo:        admin@extat.local / Admin@123"
-  echo "💰 Transações:        http://localhost:$PORT/transactions"
   echo ""
   echo "▶️  Servidor iniciando (Ctrl+C para parar)…"
   echo ""
+
+  # Abre a interface no navegador padrão (falhas são ignoradas —
+  # ex.: ambientes sem display). O sleep dá tempo do servidor subir.
+  ( sleep 2; xdg-open "http://localhost:$PORT" >/dev/null 2>&1 || true ) &
 
   # Registra o PID (este processo é substituído pelo deno via exec,
   # portanto $$ permanece válido como PID do servidor)

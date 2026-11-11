@@ -12,6 +12,8 @@
  */
 
 import express from 'express';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { config } from './config/env.ts';
 import { connectDatabase } from './config/database.ts';
 import { logger } from './utils/logger.ts';
@@ -24,6 +26,9 @@ import { createRateLimiter } from './middleware/rateLimit.ts';
 import { notFound, errorHandler } from './middleware/errorHandler.ts';
 
 const app = express();
+
+// Diretório da interface web (public/) — servido na raiz do servidor
+const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
 app.disable('x-powered-by');
 app.use(securityHeaders);
@@ -47,8 +52,11 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Página inicial — visão geral da API
-app.get('/', (_req, res) => {
+// Interface web (SPA em public/ — index.html, app.js, style.css)
+app.use(express.static(PUBLIC_DIR));
+
+// Visão geral da API (JSON — movido de / para dar lugar à interface)
+app.get('/api', (_req, res) => {
   res.status(200).json({
     name: 'ExtAT Platform',
     version: '1.0.0',
@@ -80,9 +88,9 @@ async function start() {
     logger.info('═════════════════════════════════════════════════');
     logger.info('        EXTAT PLATFORM — SERVIDOR ATIVO           ');
     logger.info('═════════════════════════════════════════════════');
-    logger.info(`🚀 URL principal:    http://localhost:${config.port}`);
+    logger.info(`🖥️  Interface web:     http://localhost:${config.port}`);
     logger.info(`📊 Health check:     http://localhost:${config.port}/health`);
-    logger.info(`🔐 Login:            http://localhost:${config.port}/auth/login`);
+    logger.info(`📖 API (JSON):        http://localhost:${config.port}/api`);
     logger.info(`💰 Transações:       http://localhost:${config.port}/transactions`);
     logger.info(`   Ambiente: ${process.env.NODE_ENV || 'development'}`);
     logger.info('═════════════════════════════════════════════════');

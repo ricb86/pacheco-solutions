@@ -1,9 +1,11 @@
-# ExtAT Platform (Backend)
+# ExtAT Platform
 
-Plataforma de pagamentos/transferências P2P — **resgatada e funcional**.
+Plataforma de pagamentos/transferências P2P — **resgatada, funcional e com
+interface web** (frontend + backend no mesmo servidor).
 
 - **Runtime:** Deno 2 (com Express, bcryptjs e jsonwebtoken via npm — sem Node.js necessário)
 - **Banco:** SQLite embutido (`node:sqlite`) — sem Docker/PostgreSQL, dados em `data/extat.db`
+- **Interface:** SPA em HTML/CSS/JS puro (sem build) servida pelo próprio Express em `public/`
 - **Linguagem:** TypeScript, modo `strict`, checagem 100% limpa (`deno task check`)
 
 ## 🚀 Como executar (executável)
@@ -12,7 +14,7 @@ O comando `extat` está instalado no PATH do usuário (`~/.local/bin/extat` → 
 para `iniciar-extat.sh` deste projeto):
 
 ```bash
-extat            # inicia o servidor (instala deps e cria o banco na 1ª execução)
+extat            # inicia o servidor e abre a interface no navegador
 extat dev        # modo desenvolvimento (reinicia a cada alteração de arquivo)
 extat stop       # finaliza o servidor
 extat status     # verifica se está ativo + health check
@@ -28,7 +30,8 @@ deno task start             # direto pelo Deno
 Na primeira execução o lançador:
 1. cria `.env` a partir de `.env.example` (com JWT_SECRET gerado automaticamente),
 2. instala as dependências (`deno install`),
-3. cria o banco SQLite com dados de demonstração (`deno task seed`).
+3. cria o banco SQLite com dados de demonstração (`deno task seed`),
+4. abre a interface web no navegador padrão (`http://localhost:3001`).
 
 ## 👤 Contas de demonstração
 
@@ -38,11 +41,29 @@ Na primeira execução o lançador:
 | maria@extat.local   | Maria@123 | user   | R$ 500,00     |
 | joao@extat.local    | Joao@123  | user   | R$ 250,00     |
 
+## 🖥️ Interface web
+
+Abra `http://localhost:3001` no navegador (o lançador abre automaticamente).
+Tema escuro estilo fintech, responsiva (celular e desktop), em português.
+
+| Tela | Descrição |
+|------|-----------|
+| Login / Cadastro | entrada com JWT; conta demo destacada |
+| Visão geral | saldo, totais enviados/recebidos, últimas transações |
+| Transferir | formulário P2P com validação (saldo, valor, destinatário) |
+| Transações | histórico completo com filtros (todas / enviadas / recebidas) |
+| Perfil | dados da conta e edição de nome/CPF |
+| Usuários | listagem de contas (visível apenas para admin) |
+
+Sessão mantida no `localStorage` (token JWT); expiração tratada com logout
+automático. Sem build, sem frameworks — HTML/CSS/JS puro em `public/`.
+
 ## 📡 Endpoints
 
 | Método | Endpoint              | Descrição                     | Autenticação |
 |--------|-----------------------|-------------------------------|--------------|
-| GET    | /                     | Visão geral da API            | Não          |
+| GET    | /                     | Interface web (SPA)           | Não          |
+| GET    | /api                  | Visão geral da API            | Não          |
 | GET    | /health               | Health check                  | Não          |
 | POST   | /auth/register        | Criar conta                   | Não          |
 | POST   | /auth/login           | Login (retorna JWT)           | Não          |
@@ -71,8 +92,13 @@ curl -X POST http://localhost:3001/transactions/create \
 
 ```
 iniciar-extat.sh      # executável / lançador (instalado como `extat` no PATH)
+public/               # interface web (servida na raiz — sem build)
+├── index.html        # SPA com hash routing (#/visao-geral, #/transferir…)
+├── app.js            # cliente da API + lógica das telas
+├── style.css         # tema visual (fintech escuro, responsivo)
+└── favicon.svg
 src/
-├── index.ts          # Entry point (Express + middlewares)
+├── index.ts          # Entry point (Express + static + middlewares)
 ├── config/           # env.ts (.env + validação) e database.ts (SQLite)
 ├── middleware/       # auth JWT, rate limit, validação, segurança, erros
 ├── routes/           # auth, users, transactions (+ barrel index.ts)

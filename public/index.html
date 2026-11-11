@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExtAT Platform — Pagamentos</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ═══════════ TELA DE LOGIN / CADASTRO ═══════════ -->
+  <div id="auth-screen" class="auth-screen hidden">
+    <div class="auth-card">
+      <div class="brand">
+        <span class="brand-mark">E</span>
+        <div class="brand-text">
+          <h1>ExtAT <small>Platform</small></h1>
+          <p>Transferências e pagamentos</p>
+        </div>
+      </div>
+
+      <div class="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab active" data-tab="login">Entrar</button>
+        <button type="button" class="auth-tab" data-tab="register">Criar conta</button>
+      </div>
+
+      <form id="login-form" class="auth-form" autocomplete="on">
+        <label>Email
+          <input type="email" id="login-email" required placeholder="voce@email.com" autocomplete="email" />
+        </label>
+        <label>Senha
+          <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password" />
+        </label>
+        <button type="submit" class="btn primary block" id="login-btn">Entrar</button>
+        <p class="form-error" id="login-error" hidden></p>
+      </form>
+
+      <form id="register-form" class="auth-form hidden" autocomplete="on">
+        <label>Nome completo
+          <input type="text" id="reg-name" required maxlength="100" placeholder="Maria Silva" autocomplete="name" />
+        </label>
+        <label>Username
+          <input type="text" id="reg-username" required minlength="3" maxlength="30"
+                 pattern="[a-zA-Z0-9_.\-]{3,30}" title="3-30 caracteres: letras, números, ponto, hífen ou underline"
+                 placeholder="maria" autocomplete="username" />
+        </label>
+        <label>Email
+          <input type="email" id="reg-email" required placeholder="voce@email.com" autocomplete="email" />
+        </label>
+        <label>CPF <small class="muted-inline">(opcional)</small>
+          <input type="text" id="reg-cpf" maxlength="14" placeholder="000.000.000-00" />
+        </label>
+        <label>Senha <small class="muted-inline">(mínimo 6 caracteres)</small>
+          <input type="password" id="reg-password" required minlength="6" placeholder="••••••••" autocomplete="new-password" />
+        </label>
+        <button type="submit" class="btn primary block" id="register-btn">Criar conta</button>
+        <p class="form-error" id="register-error" hidden></p>
+      </form>
+
+      <div class="auth-demo">
+        <strong>Conta de demonstração</strong>
+        <span><code>admin@extat.local</code> · <code>Admin@123</code></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ APLICAÇÃO PRINCIPAL ═══════════ -->
+  <div id="app-screen" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">E</span>
+        <span class="brand-name">ExtAT</span>
+      </div>
+
+      <nav class="nav">
+        <a href="#/visao-geral" data-view="dashboard">🏠 Visão geral</a>
+        <a href="#/transferir" data-view="transfer">💸 Transferir</a>
+        <a href="#/transacoes" data-view="transactions">📜 Transações</a>
+        <a href="#/perfil" data-view="profile">👤 Perfil</a>
+        <a href="#/usuarios" data-view="admin" id="nav-admin" hidden>👥 Usuários</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-mini">
+          <span class="avatar" id="sidebar-avatar">?</span>
+          <div class="user-mini-text">
+            <strong id="sidebar-username">—</strong>
+            <small id="sidebar-role">—</small>
+          </div>
+        </div>
+        <button type="button" class="btn ghost block" id="logout-btn">Sair</button>
+      </div>
+    </aside>
+
+    <main class="main">
+
+      <!-- ── VISÃO GERAL ── -->
+      <section id="view-dashboard" class="view" hidden>
+        <header class="view-header">
+          <h1>Visão geral</h1>
+          <span class="date" id="today"></span>
+        </header>
+
+        <div class="card balance-card">
+          <div class="balance-label">Saldo disponível</div>
+          <div class="balance-value" id="balance-value">R$ 0,00</div>
+          <a class="btn primary" href="#/transferir">Transferir dinheiro</a>
+        </div>
+
+        <div class="stats-grid">
+          <div class="card stat">
+            <span class="stat-label">↗ Enviado</span>
+            <span class="stat-value out" id="stat-sent">R$ 0,00</span>
+            <span class="stat-sub" id="stat-sent-count">0 transferências</span>
+          </div>
+          <div class="card stat">
+            <span class="stat-label">↘ Recebido</span>
+            <span class="stat-value in" id="stat-received">R$ 0,00</span>
+            <span class="stat-sub" id="stat-received-count">0 transferências</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Últimas transações</h2>
+            <a href="#/transacoes" class="link">ver todas →</a>
+          </div>
+          <table class="table" id="recent-transactions">
+            <thead><tr><th>Data</th><th>De → Para</th><th>Descrição</th><th class="right">Valor</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <p class="empty" id="recent-empty" hidden>Nenhuma transação ainda.<br><a href="#/transferir" class="link">Faça a primeira transferência →</a></p>
+        </div>
+      </section>
+
+      <!-- ── TRANSFERIR ── -->
+      <section id="view-transfer" class="view" hidden>
+        <header class="view-header"><h1>Transferir</h1></header>
+        <div class="card form-card">
+          <form id="transfer-form" novalidate>
+            <label>Para (username)
+              <input type="text" id="transfer-receiver" required placeholder="ex.: joao" autocomplete="off" />
+            </label>
+            <label>Valor
+              <div class="amount-field">
+                <span class="currency">R$</span>
+                <input type="number" id="transfer-amount" required min="0.01" step="0.01"
+                       placeholder="0,00" inputmode="decimal" />
+              </div>
+            </label>
+            <label>Descrição <small class="muted-inline">(opcional)</small>
+              <input type="text" id="transfer-description" maxlength="200" placeholder="ex.: pagamento do aluguel" />
+            </label>
+            <div class="form-actions">
+              <span class="form-hint" id="transfer-balance-hint"></span>
+              <button type="submit" class="btn primary" id="transfer-btn">Transferir</button>
+            </div>
+            <p class="form-error" id="transfer-error" hidden></p>
+          </form>
+        </div>
+      </section>
+
+      <!-- ── TRANSAÇÕES ── -->
+      <section id="view-transactions" class="view" hidden>
+        <header class="view-header">
+          <h1>Transações</h1>
+          <div class="filter-group" id="filter-group">
+            <button type="button" class="chip active" data-filter="all">Todas</button>
+            <button type="button" class="chip" data-filter="sent">Enviadas</button>
+            <button type="button" class="chip" data-filter="received">Recebidas</button>
+          </div>
+        </header>
+        <div class="card">
+          <table class="table" id="transactions-table">
+            <thead><tr><th>Data</th><th>Tipo</th><th>De → Para</th><th>Descrição</th><th class="right">Valor</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <p class="empty" id="transactions-empty" hidden>Nenhuma transação encontrada.</p>
+        </div>
+      </section>
+
+      <!-- ── PERFIL ── -->
+      <section id="view-profile" class="view" hidden>
+        <header class="view-header"><h1>Perfil</h1></header>
+        <div class="grid-2">
+          <div class="card profile-card">
+            <div class="avatar big" id="profile-avatar">?</div>
+            <h2 id="profile-name">—</h2>
+            <p class="muted" id="profile-email">—</p>
+            <dl class="profile-meta">
+              <div><dt>Username</dt><dd id="profile-username">—</dd></div>
+              <div><dt>Papel</dt><dd id="profile-role">—</dd></div>
+              <div><dt>CPF</dt><dd id="profile-cpf">—</dd></div>
+              <div><dt>Saldo</dt><dd id="profile-balance">—</dd></div>
+              <div><dt>Membro desde</dt><dd id="profile-created">—</dd></div>
+            </dl>
+          </div>
+          <div class="card form-card">
+            <h2>Editar dados</h2>
+            <form id="profile-form">
+              <label>Nome
+                <input type="text" id="profile-form-name" required maxlength="100" />
+              </label>
+              <label>CPF
+                <input type="text" id="profile-form-cpf" maxlength="14" placeholder="000.000.000-00" />
+              </label>
+              <button type="submit" class="btn primary">Salvar alterações</button>
+              <p class="form-error" id="profile-error" hidden></p>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── ADMIN: USUÁRIOS ── -->
+      <section id="view-admin" class="view" hidden>
+        <header class="view-header">
+          <h1>Usuários</h1>
+          <span class="muted">todos os cadastros da plataforma</span>
+        </header>
+        <div class="card">
+          <table class="table" id="users-table">
+            <thead><tr><th>Usuário</th><th>Nome</th><th>Email</th><th>Papel</th><th class="right">Saldo</th><th>Cadastro</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
