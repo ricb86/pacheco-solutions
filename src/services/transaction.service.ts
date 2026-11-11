@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Serviço de transações (transferências P2P)
+ * PACHECO SOLUTIONS — Serviço de transações (transferências P2P)
  *
  * Correções em relação ao original:
  *   - getTransactions usava `query` sem importá-lo

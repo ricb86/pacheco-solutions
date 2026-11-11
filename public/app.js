@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════════
- * ExtAT Platform — Interface web (vanilla JS, sem build)
+ * PACHECO SOLUTIONS — Interface web (vanilla JS, sem build)
  * Cliente da API REST servida pelo mesmo servidor Express.
  * ═══════════════════════════════════════════════════════════ */
 'use strict';
 
-const TOKEN_KEY = 'extat_token';
-const USER_KEY = 'extat_user';
+const TOKEN_KEY = 'pacheco_token';
+const USER_KEY = 'pacheco_user';
 
 const state = {
   token: localStorage.getItem(TOKEN_KEY),

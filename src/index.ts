@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Entry point
+ * PACHECO SOLUTIONS — Entry point
  *
  * Correções em relação ao original:
  *   - imports de módulos inexistentes removidos (module-alias, helmet,
@@ -58,8 +58,8 @@ app.use(express.static(PUBLIC_DIR));
 // Visão geral da API (JSON — movido de / para dar lugar à interface)
 app.get('/api', (_req, res) => {
   res.status(200).json({
-    name: 'ExtAT Platform',
-    version: '1.0.0',
+    name: 'PACHECO SOLUTIONS',
+    version: '1.1.0',
     docs: {
       health: 'GET /health',
       register: 'POST /auth/register',
@@ -86,7 +86,7 @@ async function start() {
 
   app.listen(config.port, () => {
     logger.info('═════════════════════════════════════════════════');
-    logger.info('        EXTAT PLATFORM — SERVIDOR ATIVO           ');
+    logger.info('      PACHECO SOLUTIONS — SERVIDOR ATIVO           ');
     logger.info('═════════════════════════════════════════════════');
     logger.info(`🖥️  Interface web:     http://localhost:${config.port}`);
     logger.info(`📊 Health check:     http://localhost:${config.port}/health`);

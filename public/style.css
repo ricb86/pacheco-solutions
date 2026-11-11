@@ -1,27 +1,29 @@
 /* ═══════════════════════════════════════════════════════════
- * ExtAT Platform — Interface web (estilo fintech, tema escuro)
+ * PACHECO SOLUTIONS — Interface web (tema escuro + dourado)
+ * Paleta extraída do logotipo oficial:
+ *   fundo carvão-azulado · acento dourado champanhe
  * ═══════════════════════════════════════════════════════════ */
 
 :root {
-  --bg: #0a0f1e;
+  --bg: #0b0d12;
   --bg-grad:
-    radial-gradient(1100px 700px at 85% -10%, rgba(35, 64, 130, 0.35) 0%, transparent 60%),
-    radial-gradient(900px 600px at -10% 110%, rgba(16, 90, 66, 0.28) 0%, transparent 55%);
-  --surface: #0e1830;
-  --card: #131f3a;
-  --card-2: #182848;
-  --border: #24365a;
-  --text: #e9eef8;
-  --muted: #92a1c0;
-  --accent: #34d399;
-  --accent-strong: #10b981;
-  --accent-soft: rgba(52, 211, 153, 0.14);
-  --blue: #60a5fa;
+    radial-gradient(1100px 700px at 85% -10%, rgba(180, 148, 90, 0.15) 0%, transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(115, 128, 150, 0.10) 0%, transparent 55%);
+  --surface: #11141b;
+  --card: #161a23;
+  --card-2: #1c212d;
+  --border: #2a3140;
+  --text: #eceee9;
+  --muted: #9aa1af;
+  --accent: #d9bd85;      /* dourado champanhe */
+  --accent-strong: #c2a35f;
+  --accent-soft: rgba(217, 189, 133, 0.13);
+  --blue: #cdb98a;        /* links em tom champanhe */
   --danger: #f87171;
-  --in: #34d399;
-  --out: #fb923c;
+  --in: #d9bd85;
+  --out: #e08a6d;
   --radius: 14px;
-  --shadow: 0 12px 32px rgba(2, 6, 23, 0.5);
+  --shadow: 0 12px 32px rgba(5, 6, 10, 0.55);
 }
 
 * { box-sizing: border-box; }
@@ -65,7 +67,7 @@ a { color: var(--blue); }
 .btn:active { transform: translateY(1px); }
 .btn.primary {
   background: linear-gradient(180deg, var(--accent), var(--accent-strong));
-  color: #04120c;
+  color: #211a09;
 }
 .btn.primary:hover { filter: brightness(1.08); }
 .btn.ghost {
@@ -92,21 +94,15 @@ a { color: var(--blue); }
   box-shadow: var(--shadow);
   padding: 28px;
 }
-.brand { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 46px; height: 46px;
-  border-radius: 12px;
-  background: linear-gradient(160deg, #182f5c, #0e1a33);
-  border: 1px solid #2c4370;
-  color: var(--accent);
-  font-size: 22px;
-  font-weight: 800;
+.brand { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 20px; }
+.brand-logo {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
 }
-.brand-text h1 { margin: 0; font-size: 22px; letter-spacing: 0.3px; }
-.brand-text h1 small { color: var(--accent); font-weight: 400; }
-.brand-text p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.brand-logo.small { width: 138px; border-radius: 8px; }
+.brand-tagline { margin: 10px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
 
 .auth-tabs {
   display: grid;
@@ -159,10 +155,10 @@ a { color: var(--blue); }
   margin-top: 18px;
   padding: 12px 14px;
   background: var(--accent-soft);
-  border: 1px dashed rgba(52, 211, 153, 0.4);
+  border: 1px dashed rgba(217, 189, 133, 0.45);
   border-radius: 10px;
   font-size: 12.5px;
-  color: #b7e5cf;
+  color: #d8c9a4;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -193,7 +189,7 @@ a { color: var(--blue); }
   top: 0;
   height: 100vh;
 }
-.brand-name { font-size: 19px; font-weight: 800; letter-spacing: 0.4px; }
+.sidebar .brand { align-items: flex-start; margin-bottom: 14px; }
 
 .nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .nav a {
@@ -233,8 +229,8 @@ a { color: var(--blue); }
   place-items: center;
   width: 38px; height: 38px;
   border-radius: 50%;
-  background: linear-gradient(160deg, #2b4c8c, #1b2f57);
-  color: #cfe0ff;
+  background: linear-gradient(160deg, #3d4350, #272c37);
+  color: #e8dcc0;
   font-weight: 700;
   font-size: 14px;
   flex-shrink: 0;
@@ -280,7 +276,7 @@ a { color: var(--blue); }
 /* Saldo */
 .balance-card {
   background:
-    linear-gradient(135deg, rgba(52, 211, 153, 0.16), rgba(96, 165, 250, 0.10)),
+    linear-gradient(135deg, rgba(217, 189, 133, 0.16), rgba(194, 163, 95, 0.07)),
     var(--card);
   display: flex;
   flex-wrap: wrap;

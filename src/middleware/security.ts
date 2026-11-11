@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Middlewares de segurança
+ * PACHECO SOLUTIONS — Middlewares de segurança
  *
  * Substituem os pacotes helmet/cors do original (que não estavam instalados):
  *   - securityHeaders: cabeçalhos de segurança HTTP

@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Camada de banco de dados
+ * PACHECO SOLUTIONS — Camada de banco de dados
  *
  * ADAPTAÇÃO DO RESGATE: o projeto original usava PostgreSQL (docker-compose).
  * Esta máquina não possui Docker/PostgreSQL/Node, apenas Deno — por isso o

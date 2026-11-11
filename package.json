@@ -1,7 +1,7 @@
 {
-  "name": "extat-platform-backend",
-  "version": "1.0.0",
-  "description": "ExtAT Platform — backend de pagamentos/transferências (Deno + Express + SQLite)",
+  "name": "pacheco-solutions",
+  "version": "1.1.0",
+  "description": "PACHECO SOLUTIONS — plataforma de pagamentos/transferências (Deno + Express + SQLite)",
   "type": "module",
   "scripts": {
     "start": "deno task start",

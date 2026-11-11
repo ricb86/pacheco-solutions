@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Middleware de autenticação JWT
+ * PACHECO SOLUTIONS — Middleware de autenticação JWT
  *
  * Correções em relação ao original:
  *   - o original usava `jwt.verify(...) as AuthRequest.user`, sintaxe inválida

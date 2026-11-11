@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Rotas de autenticação
+ * PACHECO SOLUTIONS — Rotas de autenticação
  */
 
 import { Router } from 'express';

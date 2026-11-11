@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Logger simples com timestamps
+ * PACHECO SOLUTIONS — Logger simples com timestamps
  * (substitui o @utils/logger que era importado mas não existia no projeto original)
  */
 

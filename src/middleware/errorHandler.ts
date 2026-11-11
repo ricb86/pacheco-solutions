@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Middlewares de erro
+ * PACHECO SOLUTIONS — Middlewares de erro
  * (substitui o @middlewares/errorHandler que era importado mas não existia)
  */
 

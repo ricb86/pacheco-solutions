@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Seed de dados de demonstração
+ * PACHECO SOLUTIONS — Seed de dados de demonstração
  *
  * Cria usuários de teste com saldo inicial (idempotente — pode rodar
  * quantas vezes quiser; usuários existentes não são duplicados).
@@ -7,9 +7,9 @@
  *   deno task seed
  *
  * Contas criadas:
- *   admin@extat.local  / Admin@123  (role: admin, saldo R$ 1.000,00)
- *   maria@extat.local  / Maria@123  (saldo R$ 500,00)
- *   joao@extat.local   / Joao@123   (saldo R$ 250,00)
+ *   admin@pacheco.local  / Admin@123  (role: admin, saldo R$ 1.000,00)
+ *   maria@pacheco.local  / Maria@123  (saldo R$ 500,00)
+ *   joao@pacheco.local   / Joao@123   (saldo R$ 250,00)
  */
 
 import bcrypt from 'bcryptjs';
@@ -29,15 +29,15 @@ interface SeedUser {
 const DEMO_USERS: SeedUser[] = [
   {
     username: 'admin',
-    email: 'admin@extat.local',
+    email: 'admin@pacheco.local',
     password: 'Admin@123',
-    name: 'Administrador ExtAT',
+    name: 'Administrador Pacheco',
     role: 'admin',
     balanceCents: 100_000, // R$ 1.000,00
   },
   {
     username: 'maria',
-    email: 'maria@extat.local',
+    email: 'maria@pacheco.local',
     password: 'Maria@123',
     name: 'Maria Silva',
     role: 'user',
@@ -45,7 +45,7 @@ const DEMO_USERS: SeedUser[] = [
   },
   {
     username: 'joao',
-    email: 'joao@extat.local',
+    email: 'joao@pacheco.local',
     password: 'Joao@123',
     name: 'João Souza',
     role: 'user',

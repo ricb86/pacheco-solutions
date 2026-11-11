@@ -53,7 +53,7 @@ function checkFile(filePath: string): SecurityIssue[] {
 }
 
 function main() {
-  console.log('\n🔒 Verificação de Segurança ExtAT\n');
+  console.log('\n🔒 Verificação de Segurança PACHECO SOLUTIONS\n');
 
   const filesToCheck = [
     'src/config/env.ts',

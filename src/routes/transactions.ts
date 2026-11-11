@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Rotas de transações
+ * PACHECO SOLUTIONS — Rotas de transações
  */
 
 import { Router } from 'express';

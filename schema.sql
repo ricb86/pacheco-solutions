@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- ExtAT Platform — Schema do banco (SQLite embutido)
+-- PACHECO SOLUTIONS — Schema do banco (SQLite embutido)
 --
 -- Este é o schema aplicado automaticamente pelo servidor no boot
 -- (src/config/database.ts). Arquivo de referência/documentação.

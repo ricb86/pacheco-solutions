@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Serviço de autenticação (registro e login)
+ * PACHECO SOLUTIONS — Serviço de autenticação (registro e login)
  *
  * Correções em relação ao original:
  *   - importava getClient sem usar (e a função não existia no database.ts)

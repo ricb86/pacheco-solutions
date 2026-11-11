@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Rotas de usuários
+ * PACHECO SOLUTIONS — Rotas de usuários
  */
 
 import { Router } from 'express';

@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Configuração de ambiente
+ * PACHECO SOLUTIONS — Configuração de ambiente
  *
  * Carrega o arquivo .env da raiz do projeto (sem depender de pacotes externos)
  * e expõe a configuração validada para o restante da aplicação.
@@ -67,7 +67,7 @@ export const config = {
   port: Number(process.env.PORT) || 3001,
 
   /** Arquivo do banco SQLite embutido */
-  dbPath: resolvePath(process.env.DB_PATH, './data/extat.db'),
+  dbPath: resolvePath(process.env.DB_PATH, './data/pacheco.db'),
 
   jwt: {
     secret: JWT_SECRET,

@@ -1,27 +1,27 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════
-#  EXTAT PLATFORM — Executável de inicialização
+#  PACHECO SOLUTIONS — Executável de inicialização
 #
 #  Uso:
-#    ./iniciar-extat.sh          inicia o servidor (porta do .env)
-#    ./iniciar-extat.sh dev      inicia em modo desenvolvimento (watch)
-#    ./iniciar-extat.sh stop     finaliza o servidor em execução
-#    ./iniciar-extat.sh status   verifica se o servidor está ativo
+#    ./iniciar-pacheco.sh          inicia o servidor (porta do .env)
+#    ./iniciar-pacheco.sh dev      inicia em modo desenvolvimento (watch)
+#    ./iniciar-pacheco.sh stop     finaliza o servidor em execução
+#    ./iniciar-pacheco.sh status   verifica se o servidor está ativo
 # ═══════════════════════════════════════════════════════════════
 set -euo pipefail
 
 # ── Localizar o diretório real do projeto ─────────────────────
 # Resolve symlinks (quando instalado em ~/.local/bin, aponta de volta
-# para a raiz do projeto). Sobrescreva com EXTAT_HOME se mover o projeto.
-if [ -n "${EXTAT_HOME:-}" ] && [ -d "$EXTAT_HOME" ]; then
-  PROJECT_DIR="$EXTAT_HOME"
+# para a raiz do projeto). Sobrescreva com PACHECO_HOME se mover o projeto.
+if [ -n "${PACHECO_HOME:-}" ] && [ -d "$PACHECO_HOME" ]; then
+  PROJECT_DIR="$PACHECO_HOME"
 else
   SELF="$(readlink -f "${BASH_SOURCE[0]}")"
   PROJECT_DIR="$(dirname "$SELF")"
 fi
 
 SERVER_CMD="deno run -A --no-check src/index.ts"
-PID_FILE="$PROJECT_DIR/data/extat.pid"
+PID_FILE="$PROJECT_DIR/data/pacheco.pid"
 
 # ── Localizar o Deno ──────────────────────────────────────────
 if [ -x "$HOME/.deno/bin/deno" ]; then
@@ -130,12 +130,12 @@ start_server() {
   fi
 
   echo "═══════════════════════════════════════════════════════"
-  echo "        INICIANDO EXTAT PLATFORM                       "
+  echo "        INICIANDO PACHECO SOLUTIONS                   "
   echo "═══════════════════════════════════════════════════════"
   echo ""
   echo "🖥️  Interface web:    http://localhost:$PORT"
   echo "📊 Health Check:     http://localhost:$PORT/health"
-  echo "🔐 Login demo:        admin@extat.local / Admin@123"
+  echo "🔐 Login demo:        admin@pacheco.local / Admin@123"
   echo ""
   echo "▶️  Servidor iniciando (Ctrl+C para parar)…"
   echo ""

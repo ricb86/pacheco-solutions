@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Barrel de rotas
+ * PACHECO SOLUTIONS — Barrel de rotas
  * (este arquivo era importado como @routes no original mas não existia)
  */
 

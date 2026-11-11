@@ -1,7 +1,7 @@
-# ExtAT Platform
+# PACHECO SOLUTIONS
 
-Plataforma de pagamentos/transferências P2P — **resgatada, funcional e com
-interface web** (frontend + backend no mesmo servidor).
+Plataforma de pagamentos/transferências P2P — **interface web + API no mesmo
+servidor** (resgatada de um projeto incompleto, corrigida e rebrandeda).
 
 - **Runtime:** Deno 2 (com Express, bcryptjs e jsonwebtoken via npm — sem Node.js necessário)
 - **Banco:** SQLite embutido (`node:sqlite`) — sem Docker/PostgreSQL, dados em `data/extat.db`
@@ -10,20 +10,21 @@ interface web** (frontend + backend no mesmo servidor).
 
 ## 🚀 Como executar (executável)
 
-O comando `extat` está instalado no PATH do usuário (`~/.local/bin/extat` → symlink
-para `iniciar-extat.sh` deste projeto):
+O comando `pacheco` está instalado no PATH do usuário (`~/.local/bin/pacheco` → symlink
+para `iniciar-pacheco.sh` deste projeto). O comando antigo `extat` continua
+funcionando como apelido.
 
 ```bash
-extat            # inicia o servidor e abre a interface no navegador
-extat dev        # modo desenvolvimento (reinicia a cada alteração de arquivo)
-extat stop       # finaliza o servidor
-extat status     # verifica se está ativo + health check
+pacheco           # inicia o servidor e abre a interface no navegador
+pacheco dev       # modo desenvolvimento (reinicia a cada alteração de arquivo)
+pacheco stop      # finaliza o servidor
+pacheco status    # verifica se está ativo + health check
 ```
 
-Alternativa, direto na pasta do projeto (`/home/ric_b/extat_plataform`):
+Alternativa, direto na pasta do projeto (`/home/ric_b/pacheco_solutions`):
 
 ```bash
-./iniciar-extat.sh          # mesmos comandos
+./iniciar-pacheco.sh        # mesmos comandos
 deno task start             # direto pelo Deno
 ```
 
@@ -35,16 +36,18 @@ Na primeira execução o lançador:
 
 ## 👤 Contas de demonstração
 
-| Email               | Senha     | Papel  | Saldo inicial |
-|---------------------|-----------|--------|---------------|
-| admin@extat.local   | Admin@123 | admin  | R$ 1.000,00   |
-| maria@extat.local   | Maria@123 | user   | R$ 500,00     |
-| joao@extat.local    | Joao@123  | user   | R$ 250,00     |
+| Email                | Senha     | Papel  | Saldo inicial |
+|----------------------|-----------|--------|---------------|
+| admin@pacheco.local  | Admin@123 | admin  | R$ 1.000,00   |
+| maria@pacheco.local  | Maria@123 | user   | R$ 500,00     |
+| joao@pacheco.local   | Joao@123  | user   | R$ 250,00     |
 
 ## 🖥️ Interface web
 
 Abra `http://localhost:3001` no navegador (o lançador abre automaticamente).
-Tema escuro estilo fintech, responsiva (celular e desktop), em português.
+Tema escuro com a identidade visual PACHECO SOLUTIONS (dourado champanhe
+sobre carvão, extraído do logotipo oficial), responsiva (celular e desktop),
+em português.
 
 | Tela | Descrição |
 |------|-----------|
@@ -79,7 +82,7 @@ Exemplo de transferência:
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:3001/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"maria@extat.local","password":"Maria@123"}' \
+  -d '{"email":"maria@pacheco.local","password":"Maria@123"}' \
   | deno eval "console.log(JSON.parse(await new Response(Deno.stdin.readable).text()).token)")
 
 curl -X POST http://localhost:3001/transactions/create \
@@ -91,12 +94,12 @@ curl -X POST http://localhost:3001/transactions/create \
 ## 📁 Estrutura do Projeto
 
 ```
-iniciar-extat.sh      # executável / lançador (instalado como `extat` no PATH)
+iniciar-pacheco.sh    # executável / lançador (instalado como `pacheco` no PATH)
 public/               # interface web (servida na raiz — sem build)
 ├── index.html        # SPA com hash routing (#/visao-geral, #/transferir…)
 ├── app.js            # cliente da API + lógica das telas
-├── style.css         # tema visual (fintech escuro, responsivo)
-└── favicon.svg
+├── style.css         # tema visual (carvão + dourado, responsivo)
+└── logo.jpg          # logotipo oficial (otimizado p/ web)
 src/
 ├── index.ts          # Entry point (Express + static + middlewares)
 ├── config/           # env.ts (.env + validação) e database.ts (SQLite)
@@ -133,11 +136,13 @@ legacy/               # arquivos da pilha original (Node/Postgres/Docker)
 
 ## 📜 Histórico do resgate
 
-O projeto original foi desenvolvido para Node.js + PostgreSQL (docker-compose) e
-estava incompleto: imports de módulos inexistentes (module-alias, helmet,
-compression, express-rate-limit, dotenv), arquivos de rotas duplicados e
-bugs de compilação. Foi resgatado do diretório de trabalho do LM Studio e
-portado para a pilha disponível nesta máquina (Deno + SQLite):
+O projeto original ("ExtAT Platform") foi desenvolvido para Node.js + PostgreSQL
+(docker-compose) e estava incompleto: imports de módulos inexistentes (module-alias,
+helmet, compression, express-rate-limit, dotenv), arquivos de rotas duplicados e
+bugs de compilação. Foi resgatado do diretório de trabalho do LM Studio, portado
+para a pilha disponível nesta máquina (Deno + SQLite) e, posteriormente,
+rebrandedo para **PACHECO SOLUTIONS** (interface, servidor, executável e
+identidade visual com o logotipo oficial):
 
 1. **Snapshot original** preservado no primeiro commit do git e em `legacy/`
 2. **Bugs corrigidos** (ver cabeçalhos "Correções" nos arquivos-fonte):
@@ -149,3 +154,6 @@ portado para a pilha disponível nesta máquina (Deno + SQLite):
    do código original: placeholders `$1…`, `BEGIN/COMMIT`, `RETURNING`)
    e Node/npm → Deno (o projeto continua usando os mesmos pacotes npm:
    express, bcryptjs, jsonwebtoken)
+4. **Interface web** criada (SPA em `public/`) e integrada ao servidor
+5. **Rebranding** para PACHECO SOLUTIONS: logotipo oficial, paleta dourada
+   extraída da imagem, emails de demonstração migrados no banco

@@ -1,5 +1,5 @@
 /**
- * ExtAT Platform — Serviço de usuários (perfil)
+ * PACHECO SOLUTIONS — Serviço de usuários (perfil)
  */
 
 import type { Response } from 'express';
