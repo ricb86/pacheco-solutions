@@ -474,3 +474,508 @@ a { color: var(--blue); }
   .table { font-size: 12.5px; }
   .table th:nth-child(4), .table td:nth-child(4) { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+ * MÓDULO FINANCEIRO (escopo EXTAT — fase 1)
+ * ═══════════════════════════════════════════════════════════ */
+
+/* ── Menu lateral: grupos + seletor de empresa ─────────── */
+.nav-group {
+  margin: 12px 0 3px;
+  padding: 0 12px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #67718a;
+}
+.nav-group:first-child { margin-top: 0; }
+
+.company-box { display: flex; flex-direction: column; gap: 6px; }
+.company-box select {
+  width: 100%;
+  padding: 9px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.company-box select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+/* ── Chips de status ─────────────────────────────────────── */
+.status-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.status-chip.pago         { background: rgba(74, 222, 128, 0.13);  color: #86efac; }
+.status-chip.pago_parcial { background: rgba(96, 165, 250, 0.15);  color: #93c5fd; }
+.status-chip.vence_hoje   { background: rgba(251, 191, 36, 0.14);  color: #fcd34d; }
+.status-chip.vencido      { background: rgba(248, 113, 113, 0.13); color: #fca5a5; }
+.status-chip.a_vencer {
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+/* ── Filtros ─────────────────────────────────────────────── */
+.filter-card { padding: 14px 16px; }
+.filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.f-search, .f-select, .f-date {
+  padding: 9px 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  min-width: 0;
+}
+.f-search:focus, .f-select:focus, .f-date:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+.f-search { flex: 2 1 210px; }
+.f-select { flex: 1 1 150px; }
+.f-date   { flex: 1 1 135px; }
+input[type="date"], input[type="month"] { color-scheme: dark; }
+
+/* ── Tabela de movimentações ─────────────────────────────── */
+.table-card { padding: 8px 16px 14px; }
+.table-scroll { overflow-x: auto; }
+.fin-table td { vertical-align: top; }
+.tx-desc { max-width: 330px; }
+.tx-desc strong { display: block; }
+.tx-desc small { display: block; font-size: 11.5px; margin-top: 2px; }
+.load-cell { padding: 24px !important; text-align: center; }
+.overdue { color: #fca5a5; font-weight: 700; }
+.pending { color: #fcd34d; font-weight: 600; }
+.paid-ok { color: var(--muted); }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 2px 2px;
+}
+
+/* ── Botões de ícone + perigo ────────────────────────────── */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.icon-btn:hover {
+  color: var(--text);
+  border-color: var(--muted);
+  background: var(--card-2);
+}
+.icon-btn.danger:hover {
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(248, 113, 113, 0.08);
+}
+.btn.danger {
+  background: rgba(248, 113, 113, 0.13);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+}
+.btn.danger:hover { filter: brightness(1.12); }
+
+/* ── Estatísticas de contas a pagar/receber ─────────────── */
+#pay-stats, #rec-stats { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); }
+.stat-value.warn    { color: #fcd34d; }
+.stat-value.partial { color: #93c5fd; }
+
+/* ── Drawer (criar/editar/detalhe) ───────────────────────── */
+.drawer-backdrop, .modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 14, 0.66);
+  backdrop-filter: blur(3px);
+  z-index: 60;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(500px, 94vw);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -18px 0 44px rgba(3, 5, 9, 0.6);
+  display: flex;
+  flex-direction: column;
+  z-index: 61;
+  animation: drawer-in 0.18s ease;
+}
+@keyframes drawer-in {
+  from { transform: translateX(34px); opacity: 0.4; }
+}
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-header h2 { margin: 0; font-size: 17px; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* Formulários dentro do drawer */
+.drawer-form { display: flex; flex-direction: column; }
+.drawer-form label {
+  display: block;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c4cfe4;
+}
+.drawer-form input,
+.drawer-form select,
+.drawer-form textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 400;
+}
+.drawer-form textarea { resize: vertical; }
+.drawer-form input:focus,
+.drawer-form select:focus,
+.drawer-form textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+.drawer-form .form-actions { margin-top: 18px; }
+
+/* Controles segmentados (receita/despesa) */
+.seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+.seg button {
+  padding: 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.seg button.active { background: var(--card-2); color: var(--text); }
+.seg button[data-type="receita"].active  { color: var(--in); }
+.seg button[data-type="despesa"].active  { color: var(--out); }
+
+/* Checkbox */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #c4cfe4;
+  cursor: pointer;
+}
+.check input { width: 17px; height: 17px; accent-color: var(--accent); }
+
+/* Grid 2 colunas para campos curtos */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+
+/* "Registrar pago na criação" */
+.pay-now-box {
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--card);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+.pay-now-fields { margin-top: 12px; }
+
+/* ── Detalhe da movimentação ─────────────────────────────── */
+.tx-detail { display: flex; flex-direction: column; gap: 16px; }
+.tx-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tx-detail-title { margin: 0; font-size: 19px; line-height: 1.35; }
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.detail-grid > div { min-width: 0; }
+.detail-grid dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.detail-grid dd {
+  margin: 3px 0 0;
+  font-weight: 600;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.tx-more {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border: 1px dashed rgba(217, 189, 133, 0.4);
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+/* Livro-caixa + pagamento */
+.pay-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.pay-box h4, .ledger h4 { margin: 0 0 12px; font-size: 14px; }
+.pay-box label, .pay-form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c4cfe4;
+}
+.pay-box input, .pay-box select {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 400;
+}
+.pay-box input:focus, .pay-box select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+.ledger .table { font-size: 13px; }
+.reversal-row td { opacity: 0.75; font-style: italic; }
+.reversal-row .in { color: #86efac; }
+.detail-actions {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  justify-content: flex-end;
+}
+
+/* ── Modal ───────────────────────────────────────────────── */
+.modal-backdrop { z-index: 70; }
+.modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, 92vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  z-index: 71;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h3 { margin: 0; font-size: 15.5px; }
+.modal-body { padding: 18px; overflow-y: auto; }
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+}
+.modal-message { margin: 0 0 4px; line-height: 1.55; font-size: 14px; }
+.modal-label {
+  display: block;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c4cfe4;
+}
+.modal-label input,
+.modal-label select {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 400;
+}
+.modal-label input:focus,
+.modal-label select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+.modal .form-error { margin-top: 12px; }
+
+/* ── Formulário de empresa (selects/textareas no form-card) ─ */
+.form-card select,
+.form-card textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 11px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  font-weight: 400;
+}
+.form-card select:focus,
+.form-card textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+.company-grid { align-items: start; }
+.section-title { margin: 22px 0 10px; font-size: 15px; }
+
+/* ── Plano de contas (árvore) ────────────────────────────── */
+.coa-tree { display: flex; flex-direction: column; }
+.coa-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  padding-right: 8px;
+  border-bottom: 1px solid rgba(36, 54, 90, 0.35);
+  transition: background 0.12s ease;
+}
+.coa-row:hover { background: rgba(24, 40, 72, 0.35); }
+.coa-row.inactive { opacity: 0.5; }
+.coa-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--accent);
+  min-width: 76px;
+}
+.coa-label { font-weight: 600; font-size: 14px; }
+.coa-label.is-title { font-weight: 800; }
+.row-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  opacity: 0.55;
+  transition: opacity 0.12s ease;
+}
+.coa-row:hover .row-actions { opacity: 1; }
+
+.badge.type-receita            { background: rgba(134, 239, 172, 0.12); color: #86efac; }
+.badge.type-despesa            { background: rgba(251, 146, 60, 0.14);  color: var(--out); }
+.badge.type-ativo              { background: rgba(96, 165, 250, 0.15);  color: #93c5fd; }
+.badge.type-passivo            { background: rgba(248, 113, 113, 0.13); color: #fca5a5; }
+.badge.type-patrimonio_liquido { background: rgba(196, 181, 253, 0.15); color: #c4b5fd; }
+
+/* ── Formulários inline (centros de custo / fornecedores) ── */
+.inline-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.inline-form input {
+  flex: 1 1 200px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+}
+.inline-form input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+.inline-form .sup-doc { flex: 0 1 190px; }
+
+/* ── Estados vazios ──────────────────────────────────────── */
+.empty-state { text-align: center; padding: 44px 24px; }
+.empty-state h2 { margin: 0 0 10px; }
+.empty-state p { line-height: 1.65; margin: 0 0 8px; }
+
+/* ── Responsivo do módulo financeiro ─────────────────────── */
+@media (max-width: 880px) {
+  .drawer { width: 100vw; border-left: 0; }
+  .nav-group { width: 100%; margin: 10px 0 2px; }
+  .f-search { flex: 1 1 100%; }
+}
+@media (max-width: 560px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  #pay-stats, #rec-stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+}
+@media (max-width: 520px) {
+  .fin-table th:nth-child(6), .fin-table td:nth-child(6) { display: none; }
+  .fin-table th:nth-child(8), .fin-table td:nth-child(8) { display: none; }
+}

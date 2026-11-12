@@ -6,10 +6,12 @@
 
 const TOKEN_KEY = 'pacheco_token';
 const USER_KEY = 'pacheco_user';
+const COMPANY_KEY = 'pacheco_company';
 
 const state = {
   token: localStorage.getItem(TOKEN_KEY),
   user: JSON.parse(localStorage.getItem(USER_KEY) || 'null'),
+  companyId: localStorage.getItem(COMPANY_KEY),
   transactions: [],
   filter: 'all',
 };
@@ -33,12 +35,13 @@ const initials = (name) =>
   (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
 /* ── API ─────────────────────────────────────────────────── */
-async function api(path, { method = 'GET', body } = {}) {
+async function api(path, { method = 'GET', body, company = false } = {}) {
   const res = await fetch(path, {
     method,
     headers: {
       'Content-Type': 'application/json',
       ...(state.token ? { Authorization: `Bearer ${state.token}` } : {}),
+      ...(company && state.companyId ? { 'x-company-id': state.companyId } : {}),
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
@@ -58,13 +61,18 @@ function setSession(token, user) {
   state.user = user;
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+  // Módulos externos (finance.js) reagendam o contexto de empresa.
+  if (typeof onSessionChanged === 'function') onSessionChanged();
 }
 
 function logout(message) {
   state.token = null;
   state.user = null;
+  state.companyId = null;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(COMPANY_KEY);
+  if (typeof onSessionChanged === 'function') onSessionChanged();
   location.hash = '';
   route();
   if (message) toast(message, 'error');
@@ -111,6 +119,20 @@ const VIEW_MAP = {
   'usuarios': 'admin',
 };
 
+/* Carregadores de view — módulos externos (finance.js) registram os seus
+   via registerView() antes do boot (ver DOMContentLoaded no fim do arquivo). */
+const viewLoaders = {
+  dashboard: loadDashboard,
+  transfer: prepareTransfer,
+  transactions: loadTransactions,
+  profile: loadProfile,
+  admin: loadUsers,
+};
+
+function registerView(view, loader) {
+  viewLoaders[view] = loader;
+}
+
 function route() {
   const authed = !!state.token;
   $('#auth-screen').classList.toggle('hidden', authed);
@@ -127,11 +149,7 @@ function route() {
   if (el) el.hidden = false;
   $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === view));
 
-  if (view === 'dashboard') loadDashboard();
-  if (view === 'transfer') prepareTransfer();
-  if (view === 'transactions') loadTransactions();
-  if (view === 'profile') loadProfile();
-  if (view === 'admin') loadUsers();
+  viewLoaders[view]?.();
 }
 
 function paintUser() {
@@ -416,9 +434,13 @@ bindFilters();
 bindProfile();
 window.addEventListener('hashchange', route);
 
-if (state.token) {
-  refreshUser().then(loadDashboard).catch(() => {});
-  route();
-} else {
-  route();
-}
+/* Boot adiado até o DOM estar pronto: garante que módulos carregados após
+   este arquivo (finance.js) registrem suas views antes da primeira rota. */
+document.addEventListener('DOMContentLoaded', () => {
+  if (state.token) {
+    refreshUser().then(loadDashboard).catch(() => {});
+    route();
+  } else {
+    route();
+  }
+});

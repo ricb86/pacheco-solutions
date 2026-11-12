@@ -57,6 +57,16 @@ em português.
 | Transações | histórico completo com filtros (todas / enviadas / recebidas) |
 | Perfil | dados da conta e edição de nome/CPF |
 | Usuários | listagem de contas (visível apenas para admin) |
+| Movimentações | contas a pagar e a receber com filtros, detalhe e livro-caixa |
+| Contas a pagar / receber | visões por status com totais (vencido, vence hoje, a vencer, pago parcial) |
+| Empresa → Informações | dados cadastrais da empresa e membros |
+| Empresa → Plano de contas | árvore de contas (ativo/passivo/receita/despesa/PL) com subcontas |
+| Empresa → Contas bancárias | contas com saldo inicial e saldo atual derivado |
+| Empresa → Centros de custo / Fornecedores | cadastros auxiliares do financeiro |
+| Carteira | transferências P2P entre usuários da plataforma |
+
+A empresa ativa é escolhida no seletor do menu e enviada em todo request
+financeiro pelo header `x-company-id`.
 
 Sessão mantida no `localStorage` (token JWT); expiração tratada com logout
 automático. Sem build, sem frameworks — HTML/CSS/JS puro em `public/`.
@@ -76,6 +86,28 @@ automático. Sem build, sem frameworks — HTML/CSS/JS puro em `public/`.
 | GET    | /users/:id            | Buscar usuário por ID         | Sim          |
 | GET    | /transactions         | Minhas transações             | Sim          |
 | POST   | /transactions/create  | Nova transferência P2P         | Sim          |
+
+### Financeiro (Fase 1) — exigem `x-company-id` + JWT
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET/POST | `/companies` | empresas do usuário / criar empresa |
+| GET/PATCH/DELETE | `/companies/:id` | dados cadastrais (+ `/:id/members`) |
+| GET/POST | `/bank-accounts` | contas bancárias (saldo atual derivado) |
+| PATCH/DELETE | `/bank-accounts/:id` | editar / excluir (bloqueia se houver uso) |
+| GET/POST | `/companies/coa` | plano de contas (árvore por tipo) |
+| PATCH/DELETE | `/companies/coa/:id` | editar / excluir (409 se em uso) |
+| GET/POST | `/cost-centers` | centros de custo |
+| GET/POST | `/suppliers` | fornecedores |
+| GET | `/companies/transactions` | movimentações com filtros, busca e paginação |
+| POST | `/companies/transactions` | criar movimentação (valor em centavos) |
+| GET/PATCH/DELETE | `/companies/transactions/:id` | detalhe / editar / excluir (`confirm:true`) |
+| POST | `/companies/transactions/:id/pay` | registrar pagamento (idempotente) |
+| POST | `/companies/transactions/:id/payments/:paymentId/reverse` | estornar pagamento (linha negativa no livro-caixa) |
+
+Regras principais: valores em **centavos** (`INTEGER`), status **derivado**
+(pago > vencido > vence hoje > pago parcial > a vencer), pagamento exige
+`reason` quando há pagamento prévio, e exclusões com uso retornam **409**.
 
 Exemplo de transferência:
 
@@ -98,15 +130,16 @@ iniciar-pacheco.sh    # executável / lançador (instalado como `pacheco` no PAT
 public/               # interface web (servida na raiz — sem build)
 ├── index.html        # SPA com hash routing (#/visao-geral, #/transferir…)
 ├── app.js            # cliente da API + lógica das telas
+├── finance.js        # módulo financeiro (movimentações, empresa, cadastros)
 ├── style.css         # tema visual (carvão + dourado, responsivo)
 └── logo.jpg          # logotipo oficial (otimizado p/ web)
 src/
 ├── index.ts          # Entry point (Express + static + middlewares)
 ├── config/           # env.ts (.env + validação) e database.ts (SQLite)
-├── middleware/       # auth JWT, rate limit, validação, segurança, erros
-├── routes/           # auth, users, transactions (+ barrel index.ts)
-├── services/         # lógica de negócio (auth, transações, usuários)
-└── utils/            # logger
+├── middleware/       # auth JWT, empresa ativa (x-company-id), rate limit…
+├── routes/           # auth, users, transactions, companies, coa, bank-accounts…
+├── services/         # lógica de negócio (inclui o núcleo financeiro)
+└── utils/            # logger, dinheiro/status financeiros
 scripts/
 ├── seed.ts           # dados de demonstração (deno task seed)
 └── security-check.ts # verificação de segurança (deno task security:check)
@@ -157,3 +190,11 @@ identidade visual com o logotipo oficial):
 4. **Interface web** criada (SPA em `public/`) e integrada ao servidor
 5. **Rebranding** para PACHECO SOLUTIONS: logotipo oficial, paleta dourada
    extraída da imagem, emails de demonstração migrados no banco
+6. **Módulo financeiro (Fase 1)**: engenharia reversa do contrato do
+   `app.extat.com.br` (mesmos paths, header `x-company-id`, campos
+   `reference`, `competence`, `due_date`, `payment_date`, `origin`),
+   reimplementado em Deno + SQLite: empresas e membros, contas bancárias,
+   plano de contas hierárquico, centros de custo, fornecedores e
+   movimentações com status derivado, pagamentos idempotentes e estorno
+   (livro-caixa com linha negativa). Interface correspondente em
+   `public/finance.js`. A carteira P2P foi mantida como módulo separado.

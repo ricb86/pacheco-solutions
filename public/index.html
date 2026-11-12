@@ -68,10 +68,27 @@
         <img class="brand-logo small" src="logo.jpg" alt="PACHECO SOLUTIONS" />
       </div>
 
+      <div class="company-box" id="company-box" hidden>
+        <label class="nav-group" for="company-select">Empresa ativa</label>
+        <select id="company-select" aria-label="Empresa ativa"></select>
+      </div>
+
       <nav class="nav">
+        <span class="nav-group">Financeiro</span>
+        <a href="#/financas/transacoes" data-view="fin-transactions">💰 Movimentações</a>
+        <a href="#/financas/contas-a-pagar" data-view="fin-payables">📤 Contas a pagar</a>
+        <a href="#/financas/contas-a-receber" data-view="fin-receivables">📥 Contas a receber</a>
+        <span class="nav-group">Carteira</span>
         <a href="#/visao-geral" data-view="dashboard">🏠 Visão geral</a>
         <a href="#/transferir" data-view="transfer">💸 Transferir</a>
-        <a href="#/transacoes" data-view="transactions">📜 Transações</a>
+        <a href="#/transacoes" data-view="transactions">📜 Extrato</a>
+        <span class="nav-group">Empresa</span>
+        <a href="#/empresa" data-view="company-info">🏢 Informações</a>
+        <a href="#/empresa/plano-contas" data-view="company-coa">🧾 Plano de contas</a>
+        <a href="#/empresa/contas-bancarias" data-view="company-accounts">🏦 Contas bancárias</a>
+        <a href="#/empresa/centros-custo" data-view="company-cost-centers">🎯 Centros de custo</a>
+        <a href="#/empresa/fornecedores" data-view="company-suppliers">🚚 Fornecedores</a>
+        <span class="nav-group">Conta</span>
         <a href="#/perfil" data-view="profile">👤 Perfil</a>
         <a href="#/usuarios" data-view="admin" id="nav-admin" hidden>👥 Usuários</a>
       </nav>
@@ -221,10 +238,104 @@
         </div>
       </section>
 
+      <!-- ══ FINANCEIRO: MOVIMENTAÇÕES ══ -->
+      <section id="view-fin-transactions" class="view" hidden>
+        <header class="view-header">
+          <h1>Movimentações</h1>
+          <button type="button" class="btn primary" id="fin-new">＋ Criar nova</button>
+        </header>
+        <div id="fin-root"></div>
+      </section>
+
+      <!-- ══ FINANCEIRO: CONTAS A PAGAR ══ -->
+      <section id="view-fin-payables" class="view" hidden>
+        <header class="view-header">
+          <h1>Contas a pagar</h1>
+          <button type="button" class="btn primary" id="pay-new">＋ Criar despesa</button>
+        </header>
+        <div id="pay-stats" class="stats-grid"></div>
+        <div id="pay-root"></div>
+      </section>
+
+      <!-- ══ FINANCEIRO: CONTAS A RECEBER ══ -->
+      <section id="view-fin-receivables" class="view" hidden>
+        <header class="view-header">
+          <h1>Contas a receber</h1>
+          <button type="button" class="btn primary" id="rec-new">＋ Criar receita</button>
+        </header>
+        <div id="rec-stats" class="stats-grid"></div>
+        <div id="rec-root"></div>
+      </section>
+
+      <!-- ══ EMPRESA: INFORMAÇÕES ══ -->
+      <section id="view-company-info" class="view" hidden>
+        <header class="view-header">
+          <h1>Informações da empresa</h1>
+          <button type="button" class="btn ghost" id="company-new">＋ Nova empresa</button>
+        </header>
+        <div id="company-info-root"></div>
+      </section>
+
+      <!-- ══ EMPRESA: PLANO DE CONTAS ══ -->
+      <section id="view-company-coa" class="view" hidden>
+        <header class="view-header">
+          <h1>Plano de contas</h1>
+          <button type="button" class="btn primary" id="coa-new">＋ Nova conta</button>
+        </header>
+        <div id="coa-root"></div>
+      </section>
+
+      <!-- ══ EMPRESA: CONTAS BANCÁRIAS ══ -->
+      <section id="view-company-accounts" class="view" hidden>
+        <header class="view-header">
+          <h1>Contas bancárias</h1>
+          <button type="button" class="btn primary" id="account-new">＋ Nova conta bancária</button>
+        </header>
+        <div id="accounts-root"></div>
+      </section>
+
+      <!-- ══ EMPRESA: CENTROS DE CUSTO ══ -->
+      <section id="view-company-cost-centers" class="view" hidden>
+        <header class="view-header">
+          <h1>Centros de custo</h1>
+        </header>
+        <div id="cost-centers-root"></div>
+      </section>
+
+      <!-- ══ EMPRESA: FORNECEDORES ══ -->
+      <section id="view-company-suppliers" class="view" hidden>
+        <header class="view-header">
+          <h1>Fornecedores</h1>
+        </header>
+        <div id="suppliers-root"></div>
+      </section>
+
     </main>
+  </div>
+
+  <!-- ══ Drawer (criar/editar/detalhe de movimentação) ══ -->
+  <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+  <aside class="drawer" id="drawer" hidden>
+    <header class="drawer-header">
+      <h2 id="drawer-title">—</h2>
+      <button type="button" class="icon-btn" id="drawer-close" aria-label="Fechar">✕</button>
+    </header>
+    <div class="drawer-body" id="drawer-body"></div>
+  </aside>
+
+  <!-- ══ Modal (confirmações e formulários curtos) ══ -->
+  <div class="modal-backdrop" id="modal-backdrop" hidden></div>
+  <div class="modal" id="modal" hidden>
+    <header class="modal-header">
+      <h3 id="modal-title">—</h3>
+      <button type="button" class="icon-btn" id="modal-close" aria-label="Fechar">✕</button>
+    </header>
+    <div class="modal-body" id="modal-body"></div>
+    <footer class="modal-footer" id="modal-footer"></footer>
   </div>
 
   <div id="toast" class="toast" hidden></div>
   <script src="app.js"></script>
+  <script src="finance.js"></script>
 </body>
 </html>
