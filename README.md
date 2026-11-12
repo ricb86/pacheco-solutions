@@ -4,7 +4,7 @@ Plataforma de pagamentos/transferências P2P — **interface web + API no mesmo
 servidor** (resgatada de um projeto incompleto, corrigida e rebrandeda).
 
 - **Runtime:** Deno 2 (com Express, bcryptjs e jsonwebtoken via npm — sem Node.js necessário)
-- **Banco:** SQLite embutido (`node:sqlite`) — sem Docker/PostgreSQL, dados em `data/extat.db`
+- **Banco:** SQLite embutido (`node:sqlite`) — sem Docker/PostgreSQL, dados em `data/pacheco.db`
 - **Interface:** SPA em HTML/CSS/JS puro (sem build) servida pelo próprio Express em `public/`
 - **Linguagem:** TypeScript, modo `strict`, checagem 100% limpa (`deno task check`)
 
@@ -59,9 +59,12 @@ em português.
 | Usuários | listagem de contas (visível apenas para admin) |
 | Movimentações | contas a pagar e a receber com filtros, detalhe e livro-caixa |
 | Contas a pagar / receber | visões por status com totais (vencido, vence hoje, a vencer, pago parcial) |
-| Empresa → Informações | dados cadastrais da empresa e membros |
+| Painel | saldo em contas, pendências em aberto, resultado do mês, tendência de 6 meses e maiores despesas |
+| DRE | receitas e despesas por conta contábil (regime de competência), margem e resultado mês a mês |
+| Fluxo de caixa | entradas/saídas realizadas (regime de caixa), saldo acumulado e saldo por conta |
+| Empresa → Informações | dados cadastrais da empresa e gestão de membros (adicionar, papel e remover) |
 | Empresa → Plano de contas | árvore de contas (ativo/passivo/receita/despesa/PL) com subcontas |
-| Empresa → Contas bancárias | contas com saldo inicial e saldo atual derivado |
+| Empresa → Contas bancárias | contas com saldo inicial, saldo atual derivado e transferências entre contas |
 | Empresa → Centros de custo / Fornecedores | cadastros auxiliares do financeiro |
 | Carteira | transferências P2P entre usuários da plataforma |
 
@@ -108,6 +111,42 @@ automático. Sem build, sem frameworks — HTML/CSS/JS puro em `public/`.
 Regras principais: valores em **centavos** (`INTEGER`), status **derivado**
 (pago > vencido > vence hoje > pago parcial > a vencer), pagamento exige
 `reason` quando há pagamento prévio, e exclusões com uso retornam **409**.
+
+### Financeiro (Fase 2) — relatórios, transferências e membros
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/companies/reports/dashboard` | painel: saldo em contas, pendências em aberto, resultado do mês, tendência (6 meses) e maiores despesas |
+| GET | `/companies/reports/dre?start_month=AAAA-MM&end_month=AAAA-MM` | DRE por conta contábil (regime de competência), com margem e resultado mês a mês |
+| GET | `/companies/reports/cash-flow?start_month=AAAA-MM&end_month=AAAA-MM` | fluxo de caixa realizado (regime de caixa), saldo inicial/acumulado e saldo por conta |
+| GET/POST | `/bank-transfers` | listar / criar transferência entre contas da mesma empresa |
+| DELETE | `/bank-transfers/:id` | excluir transferência (saldos recalculados) |
+| GET/POST | `/companies/:id/members` | listar membros / adicionar usuário cadastrado por email |
+| PATCH | `/companies/:id/members/:userId` | alterar papel (`admin`, `member`, `viewer`) — apenas o proprietário |
+| DELETE | `/companies/:id/members/:userId` | remover membro — proprietário ou admin (o owner nunca é removido) |
+
+Regras principais: as respostas de relatórios usam **reais** (os valores são
+convertidos na borda); o **DRE** considera a competência e o **fluxo de caixa**
+considera pagamentos/estornos realizados; **transferências entre contas** não
+alteram receita/despesa nem o saldo total, apenas o saldo de cada conta; a
+gestão de membros exige vínculo com a empresa (um usuário só é adicionado se
+já tiver conta na plataforma).
+
+Exemplo de relatório:
+
+```bash
+curl "http://localhost:3001/companies/reports/dre?start_month=2026-11&end_month=2026-11" \
+  -H "Authorization: Bearer $TOKEN" -H "x-company-id: $COMPANY_ID"
+```
+
+Exemplo de transferência entre contas:
+
+```bash
+curl -X POST http://localhost:3001/bank-transfers \
+  -H "Authorization: Bearer $TOKEN" -H "x-company-id: $COMPANY_ID" \
+  -H 'Content-Type: application/json' \
+  -d '{"from_account_id":"<origem>","to_account_id":"<destino>","amount":2000,"transfer_date":"2026-11-05","description":"Aporte"}'
+```
 
 Exemplo de transferência:
 
@@ -198,3 +237,7 @@ identidade visual com o logotipo oficial):
    movimentações com status derivado, pagamentos idempotentes e estorno
    (livro-caixa com linha negativa). Interface correspondente em
    `public/finance.js`. A carteira P2P foi mantida como módulo separado.
+7. **Módulo financeiro (Fase 2)**: painel gerencial, DRE (competência),
+   fluxo de caixa (caixa), transferências entre contas bancárias
+   (`bank_transfers`, saldo por conta sem alterar o total) e gestão de
+   membros por email com papéis (`owner`, `admin`, `member`, `viewer`).

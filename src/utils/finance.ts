@@ -34,9 +34,11 @@ export function isIsoDate(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
-/** Valida formato 'YYYY-MM' (mês de competência). */
+/** Valida formato 'YYYY-MM' (mês de competência), incluindo faixa 01–12. */
 export function isIsoMonth(value: unknown): value is string {
-  return typeof value === 'string' && /^\d{4}-\d{2}$/.test(value);
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}$/.test(value)) return false;
+  const month = Number(value.slice(5, 7));
+  return month >= 1 && month <= 12;
 }
 
 /** Sanitiza texto livre (null se vazio). */

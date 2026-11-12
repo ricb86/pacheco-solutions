@@ -1000,6 +1000,8 @@ async function loadCompanyInfo() {
   const company = detail.company;
   const list = members.members || [];
   const addr = parseAddress(company.address);
+  const isOwner = company.my_role === 'owner';
+  const canManageMembers = isOwner || company.my_role === 'admin';
 
   root.innerHTML = `
     <div class="grid-2 company-grid">
@@ -1071,19 +1073,52 @@ async function loadCompanyInfo() {
       <div>
         <div class="card">
           <div class="card-head"><h2>👥 Membros (${list.length})</h2></div>
-          <table class="table">
-            <thead><tr><th>Nome</th><th>Username</th><th>Papel</th></tr></thead>
-            <tbody>
-              ${list.map((m) => `<tr>
-                <td>${esc(m.name)}</td>
-                <td class="muted">${esc(m.username)}</td>
-                <td><span class="badge ${m.role === 'owner' ? '' : 'admin'}">${ROLE_LABELS[m.role] || m.role}</span></td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-          <p class="muted-inline" style="margin-top:10px">
-            Convites de membros chegam na fase 2 do módulo financeiro.
-          </p>
+          <div class="table-scroll">
+            <table class="table" id="members-table">
+              <thead><tr>
+                <th>Nome</th><th>Email</th><th>Papel</th>
+                ${canManageMembers ? '<th class="right">Ações</th>' : ''}
+              </tr></thead>
+              <tbody>
+                ${list.map((m) => `<tr data-member-id="${m.id}">
+                  <td><strong>${esc(m.name)}</strong><br><small class="muted">@${esc(m.username)}</small></td>
+                  <td class="muted">${esc(m.email)}</td>
+                  <td>${isOwner && m.role !== 'owner'
+    ? `<select class="role-select" data-member-role data-id="${m.id}">
+                        ${['admin', 'member', 'viewer'].map((r) =>
+      `<option value="${r}" ${r === m.role ? 'selected' : ''}>${ROLE_LABELS[r] || r}</option>`).join('')}
+                      </select>`
+    : `<span class="badge ${m.role === 'owner' ? '' : 'admin'}">${ROLE_LABELS[m.role] || m.role}</span>`}</td>
+                  ${canManageMembers
+    ? `<td class="right">${m.role === 'owner' ? ''
+      : `<button class="icon-btn danger" data-member-remove data-id="${m.id}" data-name="${esc(m.name)}" title="Remover membro">🗑</button>`}</td>`
+    : ''}
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          ${canManageMembers ? `
+            <form id="member-add-form">
+              <div class="card-head" style="margin-top:16px"><h3>Adicionar membro</h3></div>
+              <div class="inline-form">
+                <input type="email" id="member-email" required placeholder="email do usuário cadastrado">
+                <select id="member-role">
+                  <option value="member">Membro</option>
+                  <option value="viewer">Leitor</option>
+                  <option value="admin">Administrador</option>
+                </select>
+                <button type="submit" class="btn primary">＋ Adicionar</button>
+              </div>
+              <p class="form-error" id="member-error" hidden></p>
+              <p class="muted-inline">
+                O usuário precisa já ter conta na plataforma.
+                ${isOwner ? 'Como proprietário, você pode alterar o papel dos membros.' : 'Apenas o proprietário altera papéis.'}
+              </p>
+            </form>` : `
+            <p class="muted-inline" style="margin-top:12px">
+              Apenas o proprietário ou um administrador pode gerenciar membros.
+            </p>`}
         </div>
       </div>
     </div>`;
@@ -1127,6 +1162,76 @@ async function loadCompanyInfo() {
       busy(btn, false);
     }
   });
+
+  /* ── Membros: adicionar / alterar papel / remover ─────── */
+
+  const memberForm = $('#member-add-form');
+  if (memberForm) {
+    memberForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = $('#member-error');
+      err.hidden = true;
+      const btn = memberForm.querySelector('button[type="submit"]');
+      busy(btn, true, 'Adicionando…');
+      try {
+        const data = await fapi(`/companies/${state.companyId}/members`, {
+          method: 'POST',
+          body: {
+            email: $('#member-email').value.trim(),
+            role: $('#member-role').value,
+          },
+        });
+        toast(data.message || 'Membro adicionado!');
+        loadCompanyInfo();
+      } catch (e2) {
+        err.textContent = e2.message;
+        err.hidden = false;
+        busy(btn, false);
+      }
+    });
+  }
+
+  const membersTable = $('#members-table');
+  if (membersTable) {
+    membersTable.addEventListener('change', async (e) => {
+      const select = e.target.closest('select[data-member-role]');
+      if (!select) return;
+      try {
+        const data = await fapi(
+          `/companies/${state.companyId}/members/${select.dataset.id}`,
+          { method: 'PATCH', body: { role: select.value } },
+        );
+        toast(data.message || 'Papel atualizado!');
+        loadCompanyInfo();
+      } catch (err) {
+        toast(err.message, 'error');
+        loadCompanyInfo();
+      }
+    });
+
+    membersTable.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-member-remove]');
+      if (!btn) return;
+      const answer = await confirmModal({
+        title: 'Remover membro',
+        message: `Remover <strong>${esc(btn.dataset.name)}</strong> da empresa?<br>
+          O usuário perde o acesso aos dados financeiros.`,
+        confirmLabel: 'Remover',
+        danger: true,
+      });
+      if (!answer) return;
+      try {
+        const data = await fapi(
+          `/companies/${state.companyId}/members/${btn.dataset.id}`,
+          { method: 'DELETE' },
+        );
+        toast(data.message || 'Membro removido.');
+        loadCompanyInfo();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    });
+  }
 }
 
 /** Modal de criação de empresa (também usado pelo estado vazio). */
@@ -1391,8 +1496,14 @@ async function loadCompanyAccounts() {
   if (!state.companyId) { renderNoCompany(root, { showCreate: true }); return; }
 
   let accounts;
+  let transfers;
   try {
-    accounts = (await fapi('/bank-accounts')).bank_accounts || [];
+    [accounts, transfers] = await Promise.all([
+      fapi('/bank-accounts'),
+      fapi('/bank-transfers'),
+    ]);
+    accounts = accounts.bank_accounts || [];
+    transfers = transfers.transfers || [];
   } catch (err) {
     renderError(root, err.message);
     return;
@@ -1432,17 +1543,55 @@ async function loadCompanyAccounts() {
         <p class="empty">Nenhuma conta bancária cadastrada.<br>
         <span class="muted-inline">As movimentações precisam de pelo menos uma conta ativa.</span></p>`}
       <p class="muted-inline" style="margin:12px 0 0">
-        O saldo atual é derivado do saldo inicial + pagamentos registrados − estornos.
+        O saldo atual é derivado do saldo inicial + pagamentos − estornos + transferências entre contas.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>🔁 Transferências entre contas</h2>
+        <button type="button" class="btn ghost" data-transfer-new>＋ Nova transferência</button>
+      </div>
+      <div class="table-scroll">
+        <table class="table report-table">
+          <thead><tr>
+            <th>Data</th><th>De</th><th>Para</th>
+            <th class="right">Valor</th><th>Descrição</th><th class="right">Ações</th>
+          </tr></thead>
+          <tbody>
+            ${transfers.length ? transfers.map((t) => `<tr>
+              <td class="nowrap">${fmtDay(t.transfer_date)}</td>
+              <td>${esc(t.from_alias)}</td>
+              <td>${esc(t.to_alias)}</td>
+              <td class="right nowrap">${money(t.amount)}</td>
+              <td class="muted">${esc(t.description || '—')}</td>
+              <td class="right">
+                <button class="icon-btn danger" data-tr-action="delete" data-id="${t.id}" title="Excluir transferência">🗑</button>
+              </td>
+            </tr>`).join('') : '<tr><td colspan="6" class="muted">Nenhuma transferência registrada.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      <p class="muted-inline" style="margin:12px 0 0">
+        Transferências não alteram o resultado nem o saldo total da empresa — apenas o saldo de cada conta.
       </p>
     </div>`;
 
-  root.querySelector('table').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-acc-action]');
-    if (!btn) return;
-    const id = btn.dataset.id;
-    if (btn.dataset.accAction === 'edit') openAccountForm(id);
-    if (btn.dataset.accAction === 'delete') confirmDeleteAccount(id);
-  });
+  root.onclick = (e) => {
+    const acc = e.target.closest('button[data-acc-action]');
+    if (acc) {
+      const id = acc.dataset.id;
+      if (acc.dataset.accAction === 'edit') openAccountForm(id);
+      if (acc.dataset.accAction === 'delete') confirmDeleteAccount(id);
+      return;
+    }
+    const tr = e.target.closest('button[data-tr-action]');
+    if (tr && tr.dataset.trAction === 'delete') {
+      confirmDeleteTransfer(tr.dataset.id);
+      return;
+    }
+    if (e.target.closest('[data-transfer-new]')) openTransferForm();
+  };
 }
 
 async function openAccountForm(id = null) {
@@ -1564,6 +1713,122 @@ async function confirmDeleteAccount(id) {
     toast(data.message || 'Conta excluída!');
     loadCompanyAccounts();
     finOptions = null;
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+/* ── Transferências entre contas ─────────────────────────── */
+
+async function openTransferForm() {
+  await ensureCompanyContext();
+  if (!state.companyId) return;
+
+  let accounts;
+  try {
+    accounts = (await fapi('/bank-accounts')).bank_accounts || [];
+  } catch (err) {
+    toast(err.message, 'error');
+    return;
+  }
+  const active = accounts.filter((a) => Number(a.active) === 1);
+  if (active.length < 2) {
+    toast('Cadastre pelo menos duas contas ativas para transferir.', 'error');
+    return;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const options = (selectedId) => active.map((a) =>
+    `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>${esc(a.alias)} — ${money(a.current_balance)}</option>`).join('');
+
+  const answer = await new Promise((resolve) => {
+    openModal(
+      'Transferir entre contas',
+      `
+      <div class="form-grid">
+        <label class="modal-label">De (origem) *
+          <select id="trf-from" required>${options(active[0].id)}</select>
+        </label>
+        <label class="modal-label">Para (destino) *
+          <select id="trf-to" required>${options(active[1].id)}</select>
+        </label>
+      </div>
+      <div class="form-grid">
+        <label class="modal-label">Valor (R$) *
+          <input type="number" id="trf-amount" min="0.01" step="0.01" required placeholder="0,00">
+        </label>
+        <label class="modal-label">Data *
+          <input type="date" id="trf-date" required value="${today}">
+        </label>
+      </div>
+      <label class="modal-label">Descrição
+        <input type="text" id="trf-description" maxlength="200" placeholder="ex.: Aporte para despesas">
+      </label>
+      <p class="muted-inline">A transferência move o saldo entre as contas, sem alterar o resultado da empresa.</p>
+      <p class="form-error" id="trf-error" hidden></p>`,
+      `
+      <button type="button" class="btn ghost" id="modal-cancel">Cancelar</button>
+      <button type="button" class="btn primary" id="modal-confirm">Transferir</button>`,
+    );
+    let settled = false;
+    const finish = (v) => {
+      if (settled) return;
+      settled = true;
+      modalDismiss = null;
+      closeModal();
+      resolve(v);
+    };
+    modalDismiss = () => finish(null);
+    $('#modal-cancel').onclick = () => finish(null);
+    $('#modal-confirm').onclick = async () => {
+      const err = $('#trf-error');
+      err.hidden = true;
+      const body = {
+        from_account_id: $('#trf-from').value,
+        to_account_id: $('#trf-to').value,
+        amount: Number($('#trf-amount').value),
+        transfer_date: $('#trf-date').value,
+        description: $('#trf-description').value.trim() || undefined,
+      };
+      if (body.from_account_id === body.to_account_id) {
+        err.textContent = 'As contas de origem e destino devem ser diferentes.';
+        err.hidden = false;
+        return;
+      }
+      if (!Number.isFinite(body.amount) || body.amount <= 0) {
+        err.textContent = 'Informe um valor maior que zero.';
+        err.hidden = false;
+        return;
+      }
+      const btn = $('#modal-confirm');
+      busy(btn, true, 'Transferindo…');
+      try {
+        const data = await fapi('/bank-transfers', { method: 'POST', body });
+        finish(true);
+        toast(data.message || 'Transferência registrada!');
+      } catch (e2) {
+        err.textContent = e2.message;
+        err.hidden = false;
+        busy(btn, false);
+      }
+    };
+  });
+
+  if (answer) loadCompanyAccounts();
+}
+
+async function confirmDeleteTransfer(id) {
+  const answer = await confirmModal({
+    title: 'Excluir transferência',
+    message: 'A transferência será removida e os saldos das contas serão recalculados.<br>Deseja continuar?',
+    confirmLabel: 'Excluir transferência',
+    danger: true,
+  });
+  if (!answer) return;
+  try {
+    const data = await fapi(`/bank-transfers/${id}`, { method: 'DELETE' });
+    toast(data.message || 'Transferência excluída!');
+    loadCompanyAccounts();
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -1798,13 +2063,342 @@ async function loadSuppliers() {
 }
 
 /* ═══════════════════════════════════════════════════════════
+ * Relatórios — painel, DRE e fluxo de caixa (fase 2)
+ * ═══════════════════════════════════════════════════════════ */
+
+const MONTH_SHORT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+  'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const MONTH_FULL = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+/** 'AAAA-MM' → 'nov/2026' */
+function monthLabel(month) {
+  const [y, m] = String(month).split('-');
+  if (!y || !m) return String(month);
+  return `${MONTH_SHORT[Number(m) - 1]}/${y}`;
+}
+
+/** 'AAAA-MM' → 'novembro de 2026' */
+function monthFullLabel(month) {
+  const [y, m] = String(month).split('-');
+  if (!y || !m) return String(month);
+  return `${MONTH_FULL[Number(m) - 1]} de ${y}`;
+}
+
+/** 'AAAA-MM' + delta */
+function addMonthStr(month, delta) {
+  const [y, m] = String(month).split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** Valor compacto para eixos de gráfico: 28k, 1,5M… */
+function compactMoney(value) {
+  const n = Number(value || 0);
+  const abs = Math.abs(n);
+  if (abs >= 1000000) return `${(n / 1000000).toFixed(1).replace('.', ',')}M`;
+  if (abs >= 1000) {
+    return `${(n / 1000).toFixed(abs % 1000 === 0 ? 0 : 1).replace('.', ',')}k`;
+  }
+  return String(Math.round(n));
+}
+
+/** Gráfico de barras em SVG puro (sem bibliotecas). */
+function svgBars(rows, series = [['revenue', 'Receitas', 'in'], ['expense', 'Despesas', 'out']]) {
+  const W = 720, H = 240, L = 48, R = 12, T = 16, B = 30;
+  const innerW = W - L - R;
+  const innerH = H - T - B;
+  const max = Math.max(1, ...rows.flatMap((r) => series.map(([key]) => Number(r[key] || 0))));
+  const barGroup = innerW / Math.max(1, rows.length);
+  const barW = Math.max(6, Math.min(26, (barGroup * 0.66) / series.length));
+  const y = (v) => T + innerH - (Number(v || 0) / max) * innerH;
+
+  const grid = Array.from({ length: 5 }, (_, i) => {
+    const value = (max / 4) * i;
+    const yy = y(value);
+    return `<line x1="${L}" x2="${W - R}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" class="chart-grid"/>
+      <text x="${L - 6}" y="${(yy + 4).toFixed(1)}" class="chart-axis" text-anchor="end">${compactMoney(value)}</text>`;
+  }).join('');
+
+  const bars = rows.map((row, i) => {
+    const cx = L + barGroup * i + barGroup / 2;
+    const offset = (series.length - 1) / 2;
+    const rects = series.map(([key, , cls], s) => {
+      const v = Number(row[key] || 0);
+      const yy = y(v);
+      const h = Math.max(v > 0 ? 2 : 0, T + innerH - yy);
+      const x = cx + (s - offset) * (barW + 4) - barW / 2;
+      return `<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}"
+        rx="3" class="chart-bar ${cls}"><title>${monthLabel(row.month)}: ${money(v)}</title></rect>`;
+    }).join('');
+    return `${rects}<text x="${cx.toFixed(1)}" y="${H - 10}" class="chart-axis" text-anchor="middle">${monthLabel(row.month)}</text>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart" preserveAspectRatio="xMidYMid meet" role="img">${grid}${bars}</svg>`;
+}
+
+function reportStat(label, value, sub, cls = '') {
+  return `<div class="card stat">
+    <span class="stat-label">${label}</span>
+    <span class="stat-value ${cls}">${value}</span>
+    <span class="stat-sub">${sub}</span>
+  </div>`;
+}
+
+function reportLegend(series) {
+  return `<span class="legend">${series.map(([, label, cls]) =>
+    `<i class="dot ${cls}"></i>${label}`).join('')}</span>`;
+}
+
+/* ── Painel financeiro ──────────────────────────────────── */
+
+async function loadFinanceDashboard() {
+  await ensureCompanyContext();
+  const root = $('#dash-root');
+  if (!state.companyId) { renderNoCompany(root, { showCreate: true }); return; }
+
+  let data;
+  try {
+    data = await fapi('/companies/reports/dashboard');
+  } catch (err) {
+    renderError(root, err.message);
+    return;
+  }
+
+  $('#dash-month').textContent = monthFullLabel(data.month);
+  const p = data.payables;
+  const r = data.receivables;
+  const cats = data.expense_categories || [];
+  const catMax = Math.max(1, ...cats.map((c) => c.total));
+  const trend = data.trend || [];
+
+  root.innerHTML = `
+    <div class="stats-grid">
+      ${reportStat('🏦 Saldo em contas', money(data.cash.total_balance),
+    `${data.cash.accounts} conta(s) ativa(s)`, 'in')}
+      ${reportStat('📤 A pagar em aberto', money(p.total),
+    `${p.count} pendência(s) · ${money(p.overdue)} vencido`, 'out')}
+      ${reportStat('📥 A receber em aberto', money(r.total),
+    `${r.count} pendência(s) · ${money(r.overdue)} vencido`, 'in')}
+      ${reportStat('📊 Resultado do mês', money(data.result.net),
+    `Receitas ${money(data.result.revenue)} · Despesas ${money(data.result.expense)}`,
+    data.result.net >= 0 ? 'in' : 'out')}
+    </div>
+
+    <div class="grid-2 report-grid">
+      <div class="card">
+        <div class="card-head">
+          <h2>Receitas × despesas</h2>
+          ${reportLegend([['revenue', 'Receitas', 'in'], ['expense', 'Despesas', 'out']])}
+        </div>
+        ${svgBars(trend)}
+        <p class="muted-inline">Regime de competência · últimos 6 meses</p>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Maiores despesas do mês</h2></div>
+        ${cats.length
+      ? `<div class="cat-list">${cats.map((c) => `
+          <div class="cat-item">
+            <div class="cat-line">
+              <span class="cat-name"><strong>${esc(c.code)}</strong> ${esc(c.label)}</span>
+              <span class="nowrap">${money(c.total)}</span>
+            </div>
+            <div class="cat-bar"><span style="width:${((c.total / catMax) * 100).toFixed(1)}%"></span></div>
+          </div>`).join('')}</div>`
+      : '<p class="empty">Sem despesas de competência neste mês.</p>'}
+      </div>
+    </div>
+
+    <div class="card report-links">
+      <a class="btn ghost" href="#/financas/contas-a-pagar">📤 Contas a pagar</a>
+      <a class="btn ghost" href="#/financas/contas-a-receber">📥 Contas a receber</a>
+      <a class="btn ghost" href="#/financas/dre">📈 Abrir DRE</a>
+      <a class="btn ghost" href="#/financas/fluxo-caixa">💵 Fluxo de caixa</a>
+    </div>`;
+
+  // atualiza o rótulo do mês se o usuário trocar de empresa
+}
+
+/* ── DRE ─────────────────────────────────────────────────── */
+
+function dreTable(list, type, total) {
+  return `<div class="table-scroll"><table class="table report-table">
+    <thead><tr>
+      <th>Código</th><th>Conta contábil</th>
+      <th class="right">Lanç.</th><th class="right">Valor</th>
+    </tr></thead>
+    <tbody>
+      ${list.length ? list.map((r) => `<tr>
+        <td class="muted nowrap">${esc(r.code)}</td>
+        <td>${esc(r.label)}</td>
+        <td class="right muted">${r.count}</td>
+        <td class="right nowrap ${type === 'receita' ? 'in' : 'out'}">${money(r.total)}</td>
+      </tr>`).join('') : '<tr><td colspan="4" class="muted">Sem lançamentos no período.</td></tr>'}
+    </tbody>
+    <tfoot><tr>
+      <th colspan="3">Total</th>
+      <th class="right nowrap ${type === 'receita' ? 'in' : 'out'}">${money(total)}</th>
+    </tr></tfoot>
+  </table></div>`;
+}
+
+function monthResultTable(months) {
+  return `<div class="table-scroll"><table class="table report-table">
+    <thead><tr>
+      <th>Mês</th><th class="right">Receitas</th>
+      <th class="right">Despesas</th><th class="right">Resultado</th>
+    </tr></thead>
+    <tbody>
+      ${months.map((m) => `<tr>
+        <td class="nowrap">${monthLabel(m.month)}</td>
+        <td class="right nowrap in">${money(m.revenue)}</td>
+        <td class="right nowrap out">${money(m.expense)}</td>
+        <td class="right nowrap ${m.net >= 0 ? 'in' : 'out'}">${money(m.net)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+async function loadDre() {
+  await ensureCompanyContext();
+  const root = $('#dre-root');
+  if (!state.companyId) { renderNoCompany(root, { showCreate: true }); return; }
+
+  const startEl = $('#dre-start');
+  const endEl = $('#dre-end');
+  if (!startEl.value) startEl.value = currentMonth();
+  if (!endEl.value) endEl.value = currentMonth();
+
+  let data;
+  try {
+    data = await fapi(
+      `/companies/reports/dre?start_month=${startEl.value}&end_month=${endEl.value}`,
+    );
+  } catch (err) {
+    renderError(root, err.message);
+    return;
+  }
+
+  root.innerHTML = `
+    <div class="stats-grid">
+      ${reportStat('📥 Receitas', money(data.revenue_total), 'regime de competência', 'in')}
+      ${reportStat('📤 Despesas', money(data.expense_total), 'regime de competência', 'out')}
+      ${reportStat('📊 Resultado', money(data.result),
+    data.margin === null
+      ? 'sem receitas no período'
+      : `margem de ${data.margin.toFixed(1).replace('.', ',')}%`,
+    data.result >= 0 ? 'in' : 'out')}
+      ${reportStat('🗓️ Período', `${data.period.months.length} mês(es)`,
+    `${monthLabel(data.period.start_month)} a ${monthLabel(data.period.end_month)}`)}
+    </div>
+
+    <div class="grid-2 report-grid">
+      <div class="card">
+        <div class="card-head"><h2>Receitas por conta</h2></div>
+        ${dreTable(data.revenue, 'receita', data.revenue_total)}
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Despesas por conta</h2></div>
+        ${dreTable(data.expense, 'despesa', data.expense_total)}
+      </div>
+    </div>
+
+    ${data.period.months.length > 1 ? `
+      <div class="card">
+        <div class="card-head"><h2>Resultado mês a mês</h2></div>
+        ${monthResultTable(data.by_month)}
+      </div>` : ''}`;
+}
+
+/* ── Fluxo de caixa ──────────────────────────────────────── */
+
+async function loadCashFlow() {
+  await ensureCompanyContext();
+  const root = $('#cf-root');
+  if (!state.companyId) { renderNoCompany(root, { showCreate: true }); return; }
+
+  const startEl = $('#cf-start');
+  const endEl = $('#cf-end');
+  if (!startEl.value) startEl.value = addMonthStr(currentMonth(), -5);
+  if (!endEl.value) endEl.value = currentMonth();
+
+  let data;
+  try {
+    data = await fapi(
+      `/companies/reports/cash-flow?start_month=${startEl.value}&end_month=${endEl.value}`,
+    );
+  } catch (err) {
+    renderError(root, err.message);
+    return;
+  }
+
+  root.innerHTML = `
+    <div class="stats-grid">
+      ${reportStat('🏁 Saldo inicial', money(data.opening_balance), 'antes do período')}
+      ${reportStat('📥 Entradas', money(data.inflow_total), 'recebimentos realizados', 'in')}
+      ${reportStat('📤 Saídas', money(data.outflow_total), 'pagamentos realizados', 'out')}
+      ${reportStat('🏦 Saldo atual', money(data.closing_balance),
+    `${data.net_total >= 0 ? '+' : ''}${money(data.net_total)} no período`,
+    data.closing_balance >= 0 ? 'in' : 'out')}
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Entradas × saídas</h2>
+        ${reportLegend([['inflow', 'Entradas', 'in'], ['outflow', 'Saídas', 'out']])}
+      </div>
+      ${svgBars(data.months, [['inflow', 'Entradas', 'in'], ['outflow', 'Saídas', 'out']])}
+      <p class="muted-inline">Regime de caixa · pagamentos e estornos registrados</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Saldo mês a mês</h2></div>
+      <div class="table-scroll"><table class="table report-table">
+        <thead><tr>
+          <th>Mês</th><th class="right">Entradas</th><th class="right">Saídas</th>
+          <th class="right">Resultado</th><th class="right">Saldo acumulado</th>
+        </tr></thead>
+        <tbody>
+          ${data.months.map((m) => `<tr>
+            <td class="nowrap">${monthLabel(m.month)}</td>
+            <td class="right nowrap in">${money(m.inflow)}</td>
+            <td class="right nowrap out">${money(m.outflow)}</td>
+            <td class="right nowrap ${m.net >= 0 ? 'in' : 'out'}">${money(m.net)}</td>
+            <td class="right nowrap">${money(m.closing)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Saldos por conta</h2></div>
+      <div class="table-scroll"><table class="table report-table">
+        <thead><tr><th>Conta</th><th class="right">Saldo atual</th></tr></thead>
+        <tbody>
+          ${data.accounts.map((a) => `<tr>
+            <td>${esc(a.alias)}</td>
+            <td class="right nowrap ${a.balance >= 0 ? 'in' : 'out'}">${money(a.balance)}</td>
+          </tr>`).join('') || '<tr><td colspan="2" class="muted">Nenhuma conta cadastrada.</td></tr>'}
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+/* Bindings dos filtros de período (views sempre montadas no HTML). */
+$('#dre-apply')?.addEventListener('click', loadDre);
+$('#cf-apply')?.addEventListener('click', loadCashFlow);
+
+/* ═══════════════════════════════════════════════════════════
  * Registro das views + bindings globais
  * ═══════════════════════════════════════════════════════════ */
 
 Object.assign(VIEW_MAP, {
+  'financas/painel': 'fin-dashboard',
   'financas/transacoes': 'fin-transactions',
   'financas/contas-a-pagar': 'fin-payables',
   'financas/contas-a-receber': 'fin-receivables',
+  'financas/dre': 'fin-dre',
+  'financas/fluxo-caixa': 'fin-cashflow',
   'empresa': 'company-info',
   'empresa/plano-contas': 'company-coa',
   'empresa/contas-bancarias': 'company-accounts',
@@ -1812,9 +2406,12 @@ Object.assign(VIEW_MAP, {
   'empresa/fornecedores': 'company-suppliers',
 });
 
+registerView('fin-dashboard', loadFinanceDashboard);
 registerView('fin-transactions', loadFinTransactions);
 registerView('fin-payables', loadFinPayables);
 registerView('fin-receivables', loadFinReceivables);
+registerView('fin-dre', loadDre);
+registerView('fin-cashflow', loadCashFlow);
 registerView('company-info', loadCompanyInfo);
 registerView('company-coa', loadCompanyCoa);
 registerView('company-accounts', loadCompanyAccounts);
@@ -1833,6 +2430,7 @@ $('#rec-new').addEventListener('click', () => openTxForm({ prefix: 'rec', type: 
 $('#company-new').addEventListener('click', openCompanyCreateModal);
 $('#coa-new').addEventListener('click', () => openCoaForm({}));
 $('#account-new').addEventListener('click', () => openAccountForm());
+$('#transfer-new').addEventListener('click', () => openTransferForm());
 
 /* Seletor de empresa no menu lateral */
 bindCompanySelect();

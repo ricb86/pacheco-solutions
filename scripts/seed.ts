@@ -340,6 +340,39 @@ async function seedFinance(): Promise<void> {
   };
   logger.info('🏦 2 contas bancárias criadas (BB e Nubank PJ)');
 
+  // transferências entre contas (fase 2) — saldo total não muda
+  await query(
+    `INSERT INTO bank_transfers
+       (company_id, from_account_id, to_account_id, amount, transfer_date,
+        description, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      companyId,
+      accountIds.bb,
+      accountIds.nu,
+      200_000, // R$ 2.000,00
+      isoDate(-7),
+      'Aporte para despesas no Nubank',
+      mariaId,
+    ],
+  );
+  await query(
+    `INSERT INTO bank_transfers
+       (company_id, from_account_id, to_account_id, amount, transfer_date,
+        description, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      companyId,
+      accountIds.nu,
+      accountIds.bb,
+      80_000, // R$ 800,00
+      isoDate(-2),
+      'Retorno de caixa para a conta principal',
+      mariaId,
+    ],
+  );
+  logger.info('🔁 2 transferências entre contas criadas (BB ↔ Nubank)');
+
   // fornecedores
   const suppliersSeed: Array<[string, string]> = [
     ['Cemig Distribuição', '03.557.161/0001-79'],
@@ -638,7 +671,7 @@ async function seedFinance(): Promise<void> {
   logger.info(
     `📜 ${txs.length} movimentações criadas (pago, pago parcial, vence hoje, a vencer, vencido e 1 estorno)`,
   );
-  logger.info(`   Saldos derivados: BB ${brl(1_850_000)} · Nubank ${brl(468_000)}`);
+  logger.info(`   Saldos derivados: BB ${brl(1_730_000)} · Nubank ${brl(588_000)}`);
 }
 
 /* ── Execução ────────────────────────────────────────────── */

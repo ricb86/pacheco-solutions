@@ -8,12 +8,15 @@
 
 import { Router } from 'express';
 import {
+  addMember,
   createCompany,
   deleteCompany,
   getCompany,
   listCompanies,
   listMembers,
+  removeMember,
   updateCompany,
+  updateMemberRole,
 } from '../services/company.service.ts';
 import { authMiddleware } from '../middleware/auth.middleware.ts';
 import { validateBody } from '../middleware/validation.ts';
@@ -32,5 +35,8 @@ router.get('/:id', getCompany);
 router.patch('/:id', updateCompany);
 router.delete('/:id', deleteCompany);
 router.get('/:id/members', listMembers);
+router.post('/:id/members', addMember);
+router.patch('/:id/members/:userId', updateMemberRole);
+router.delete('/:id/members/:userId', removeMember);
 
 export default router;

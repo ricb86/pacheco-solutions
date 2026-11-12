@@ -17,13 +17,19 @@ import { textOrNull, toCents } from '../utils/finance.ts';
 
 const BANK_SELECT = `SELECT b.id, b.code, b.label, b.active FROM banks b`;
 
-const ACCOUNT_SELECT = `SELECT a.*, b.code AS bank_code, b.label AS bank_label,
-  (a.opening_balance + COALESCE((
-      SELECT SUM(CASE WHEN ft.type = 'receita' THEN p.amount ELSE -p.amount END)
-        FROM transaction_payments p
-        JOIN financial_transactions ft ON ft.id = p.transaction_id
-       WHERE p.bank_account_id = a.id
-   ), 0)) AS current_balance,
+export const ACCOUNT_SELECT = `SELECT a.*, b.code AS bank_code, b.label AS bank_label,
+  (a.opening_balance
+   + COALESCE((
+       SELECT SUM(CASE WHEN ft.type = 'receita' THEN p.amount ELSE -p.amount END)
+         FROM transaction_payments p
+         JOIN financial_transactions ft ON ft.id = p.transaction_id
+        WHERE p.bank_account_id = a.id
+     ), 0)
+   + COALESCE((SELECT SUM(bt.amount) FROM bank_transfers bt
+                WHERE bt.to_account_id = a.id), 0)
+   - COALESCE((SELECT SUM(bt.amount) FROM bank_transfers bt
+                WHERE bt.from_account_id = a.id), 0)
+  ) AS current_balance,
   (SELECT COUNT(*) FROM financial_transactions ft
     WHERE ft.bank_account_id = a.id) AS transactions_count
   FROM bank_accounts a
@@ -251,7 +257,9 @@ export const deleteBankAccount = async (
         (SELECT COUNT(*) FROM financial_transactions ft
           WHERE ft.bank_account_id = a.id) AS used_by_transactions,
         (SELECT COUNT(*) FROM transaction_payments p
-          WHERE p.bank_account_id = a.id) AS used_by_payments
+          WHERE p.bank_account_id = a.id) AS used_by_payments,
+        (SELECT COUNT(*) FROM bank_transfers bt
+          WHERE bt.from_account_id = a.id OR bt.to_account_id = a.id) AS used_by_transfers
        FROM bank_accounts a
       WHERE a.id = $1 AND a.company_id = $2`,
       [req.params.id, req.company!.id],
@@ -264,9 +272,11 @@ export const deleteBankAccount = async (
     const row = found.rows[0] as unknown as {
       used_by_transactions: number;
       used_by_payments: number;
+      used_by_transfers: number;
     };
     if (Number(row.used_by_transactions) > 0 ||
-      Number(row.used_by_payments) > 0
+      Number(row.used_by_payments) > 0 ||
+      Number(row.used_by_transfers) > 0
     ) {
       res.status(409).json({
         error:

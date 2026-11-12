@@ -18,6 +18,8 @@ import coaRoutes from './coa.ts';
 import supplierRoutes from './suppliers.ts';
 import costCenterRoutes from './costCenters.ts';
 import financeTransactionRoutes from './financeTransactions.ts';
+import reportRoutes from './reports.ts';
+import bankTransferRoutes from './bankTransfers.ts';
 
 const router = Router();
 
@@ -29,8 +31,10 @@ router.use('/transactions', transactionRoutes); // carteira P2P (extra mantido)
 router.use('/banks', banksRoutes);
 router.use('/companies/coa', coaRoutes);
 router.use('/companies/transactions', financeTransactionRoutes);
+router.use('/companies/reports', reportRoutes);
 router.use('/companies', companiesRoutes);
 router.use('/bank-accounts', bankAccountRoutes);
+router.use('/bank-transfers', bankTransferRoutes);
 router.use('/cost-centers', costCenterRoutes);
 router.use('/suppliers', supplierRoutes);
 

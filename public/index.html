@@ -75,9 +75,12 @@
 
       <nav class="nav">
         <span class="nav-group">Financeiro</span>
+        <a href="#/financas/painel" data-view="fin-dashboard">📊 Painel</a>
         <a href="#/financas/transacoes" data-view="fin-transactions">💰 Movimentações</a>
         <a href="#/financas/contas-a-pagar" data-view="fin-payables">📤 Contas a pagar</a>
         <a href="#/financas/contas-a-receber" data-view="fin-receivables">📥 Contas a receber</a>
+        <a href="#/financas/dre" data-view="fin-dre">📈 DRE</a>
+        <a href="#/financas/fluxo-caixa" data-view="fin-cashflow">💵 Fluxo de caixa</a>
         <span class="nav-group">Carteira</span>
         <a href="#/visao-geral" data-view="dashboard">🏠 Visão geral</a>
         <a href="#/transferir" data-view="transfer">💸 Transferir</a>
@@ -238,6 +241,15 @@
         </div>
       </section>
 
+      <!-- ══ FINANCEIRO: PAINEL ══ -->
+      <section id="view-fin-dashboard" class="view" hidden>
+        <header class="view-header">
+          <h1>Painel financeiro</h1>
+          <span class="date" id="dash-month"></span>
+        </header>
+        <div id="dash-root"></div>
+      </section>
+
       <!-- ══ FINANCEIRO: MOVIMENTAÇÕES ══ -->
       <section id="view-fin-transactions" class="view" hidden>
         <header class="view-header">
@@ -267,6 +279,32 @@
         <div id="rec-root"></div>
       </section>
 
+      <!-- ══ FINANCEIRO: DRE ══ -->
+      <section id="view-fin-dre" class="view" hidden>
+        <header class="view-header">
+          <h1>DRE — Demonstrativo de Resultado</h1>
+          <div class="period-filter">
+            <label>De <input type="month" id="dre-start"></label>
+            <label>Até <input type="month" id="dre-end"></label>
+            <button type="button" class="btn ghost" id="dre-apply">Aplicar</button>
+          </div>
+        </header>
+        <div id="dre-root"></div>
+      </section>
+
+      <!-- ══ FINANCEIRO: FLUXO DE CAIXA ══ -->
+      <section id="view-fin-cashflow" class="view" hidden>
+        <header class="view-header">
+          <h1>Fluxo de caixa</h1>
+          <div class="period-filter">
+            <label>De <input type="month" id="cf-start"></label>
+            <label>Até <input type="month" id="cf-end"></label>
+            <button type="button" class="btn ghost" id="cf-apply">Aplicar</button>
+          </div>
+        </header>
+        <div id="cf-root"></div>
+      </section>
+
       <!-- ══ EMPRESA: INFORMAÇÕES ══ -->
       <section id="view-company-info" class="view" hidden>
         <header class="view-header">
@@ -289,7 +327,10 @@
       <section id="view-company-accounts" class="view" hidden>
         <header class="view-header">
           <h1>Contas bancárias</h1>
-          <button type="button" class="btn primary" id="account-new">＋ Nova conta bancária</button>
+          <div class="header-actions">
+            <button type="button" class="btn ghost" id="transfer-new">🔁 Transferir entre contas</button>
+            <button type="button" class="btn primary" id="account-new">＋ Nova conta bancária</button>
+          </div>
         </header>
         <div id="accounts-root"></div>
       </section>

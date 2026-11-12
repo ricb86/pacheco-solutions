@@ -231,23 +231,209 @@ export const deleteCompany = async (
   }
 };
 
-/** Membros da empresa (leitura — convites/edição chegam na fase 3). */
+/** Papel do usuário na empresa (null se não for membro). */
+function getMembership(companyId: string, userId: string): string | null {
+  const result = query(
+    `SELECT role FROM company_members WHERE company_id = $1 AND user_id = $2`,
+    [companyId, userId],
+  );
+  return result.rows.length ? String(result.rows[0].role) : null;
+}
+
+/** Membros da empresa — visível a qualquer membro. */
 export const listMembers = async (
   req: AuthRequest,
   res: Response,
 ): Promise<void> => {
   try {
+    const companyId = req.params.id;
+    if (!getMembership(companyId, req.user!.id)) {
+      res.status(404).json({ error: 'Empresa não encontrada.' });
+      return;
+    }
     const result = query(
       `SELECT m.user_id AS id, u.name, u.email, u.username, m.role, m.created_at
          FROM company_members m
          JOIN users u ON u.id = m.user_id
         WHERE m.company_id = $1
         ORDER BY m.created_at ASC`,
-      [req.params.id],
+      [companyId],
     );
     res.json({ members: result.rows });
   } catch (error) {
     console.error('Erro ao listar membros:', error);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
+  }
+};
+
+const ASSIGNABLE_ROLES = ['admin', 'member', 'viewer'];
+
+/** Adiciona um usuário já cadastrado à empresa (convite por email). */
+export const addMember = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const companyId = req.params.id;
+    const myRole = getMembership(companyId, req.user!.id);
+    if (!myRole) {
+      res.status(404).json({ error: 'Empresa não encontrada.' });
+      return;
+    }
+    if (myRole !== 'owner' && myRole !== 'admin') {
+      res.status(403).json({
+        error: 'Apenas o proprietário ou um admin pode adicionar membros.',
+      });
+      return;
+    }
+
+    const email = textOrNull(req.body?.email);
+    const role = textOrNull(req.body?.role) ?? 'member';
+    if (!email) {
+      res.status(400).json({ error: 'Informe o email do usuário.' });
+      return;
+    }
+    if (!ASSIGNABLE_ROLES.includes(role)) {
+      res.status(400).json({
+        error: `role deve ser: ${ASSIGNABLE_ROLES.join(', ')}.`,
+      });
+      return;
+    }
+
+    const user = query(
+      `SELECT id, name, username, email FROM users WHERE lower(email) = lower($1)`,
+      [email],
+    ).rows[0];
+    if (!user) {
+      res.status(404).json({
+        error:
+          'Nenhuma conta encontrada com este email. Peça ao usuário para criar uma conta na plataforma primeiro.',
+      });
+      return;
+    }
+
+    if (getMembership(companyId, String(user.id))) {
+      res.status(409).json({ error: 'Este usuário já é membro da empresa.' });
+      return;
+    }
+
+    query(
+      `INSERT INTO company_members (company_id, user_id, role)
+       VALUES ($1, $2, $3)`,
+      [companyId, String(user.id), role],
+    );
+
+    res.status(201).json({
+      message: `${user.name} foi adicionado(a) à empresa.`,
+      member: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role,
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao adicionar membro:', error);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
+  }
+};
+
+/** Altera o papel de um membro (apenas o proprietário). */
+export const updateMemberRole = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const companyId = req.params.id;
+    const myRole = getMembership(companyId, req.user!.id);
+    if (!myRole) {
+      res.status(404).json({ error: 'Empresa não encontrada.' });
+      return;
+    }
+    if (myRole !== 'owner') {
+      res.status(403).json({
+        error: 'Apenas o proprietário pode alterar o papel dos membros.',
+      });
+      return;
+    }
+
+    const targetRole = getMembership(companyId, req.params.userId);
+    if (!targetRole) {
+      res.status(404).json({ error: 'Membro não encontrado.' });
+      return;
+    }
+    if (targetRole === 'owner') {
+      res.status(422).json({ error: 'O papel do proprietário não pode ser alterado.' });
+      return;
+    }
+
+    const role = textOrNull(req.body?.role);
+    if (!role || !ASSIGNABLE_ROLES.includes(role)) {
+      res.status(400).json({
+        error: `role deve ser: ${ASSIGNABLE_ROLES.join(', ')}.`,
+      });
+      return;
+    }
+
+    query(
+      `UPDATE company_members SET role = $1
+        WHERE company_id = $2 AND user_id = $3`,
+      [role, companyId, req.params.userId],
+    );
+
+    res.json({
+      message: 'Papel atualizado com sucesso!',
+      member: { id: req.params.userId, role },
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar papel do membro:', error);
+    res.status(500).json({ error: 'Erro interno no servidor.' });
+  }
+};
+
+/** Remove um membro (o proprietário nunca pode ser removido). */
+export const removeMember = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const companyId = req.params.id;
+    const myRole = getMembership(companyId, req.user!.id);
+    if (!myRole) {
+      res.status(404).json({ error: 'Empresa não encontrada.' });
+      return;
+    }
+    if (myRole !== 'owner' && myRole !== 'admin') {
+      res.status(403).json({
+        error: 'Apenas o proprietário ou um admin pode remover membros.',
+      });
+      return;
+    }
+
+    const targetRole = getMembership(companyId, req.params.userId);
+    if (!targetRole) {
+      res.status(404).json({ error: 'Membro não encontrado.' });
+      return;
+    }
+    if (targetRole === 'owner') {
+      res.status(422).json({ error: 'O proprietário não pode ser removido da empresa.' });
+      return;
+    }
+    if (myRole === 'admin' && targetRole === 'admin') {
+      res.status(403).json({
+        error: 'Apenas o proprietário pode remover um admin.',
+      });
+      return;
+    }
+
+    query(
+      `DELETE FROM company_members WHERE company_id = $1 AND user_id = $2`,
+      [companyId, req.params.userId],
+    );
+    res.json({ message: 'Membro removido da empresa.' });
+  } catch (error) {
+    console.error('Erro ao remover membro:', error);
     res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 };

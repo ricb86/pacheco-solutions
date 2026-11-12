@@ -327,7 +327,25 @@ CREATE TABLE IF NOT EXISTS transaction_payments (
   created_at          TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+/* Transferências entre contas da própria empresa (fase 2). Não alteram o
+   saldo total da empresa — apenas movem dinheiro entre contas. */
+CREATE TABLE IF NOT EXISTS bank_transfers (
+  id              TEXT PRIMARY KEY DEFAULT ${UUID_DEFAULT},
+  company_id      TEXT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  from_account_id TEXT NOT NULL REFERENCES bank_accounts(id) ON DELETE RESTRICT,
+  to_account_id   TEXT NOT NULL REFERENCES bank_accounts(id) ON DELETE RESTRICT,
+  amount          INTEGER NOT NULL CHECK (amount > 0),
+  transfer_date   TEXT NOT NULL,
+  description     TEXT,
+  created_by      TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  CHECK (from_account_id <> to_account_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_bank_accounts_company       ON bank_accounts(company_id);
+CREATE INDEX IF NOT EXISTS idx_transfers_company           ON bank_transfers(company_id);
+CREATE INDEX IF NOT EXISTS idx_transfers_from              ON bank_transfers(from_account_id);
+CREATE INDEX IF NOT EXISTS idx_transfers_to                ON bank_transfers(to_account_id);
 CREATE INDEX IF NOT EXISTS idx_coa_company                ON chart_of_accounts(company_id);
 CREATE INDEX IF NOT EXISTS idx_ftx_company                ON financial_transactions(company_id);
 CREATE INDEX IF NOT EXISTS idx_ftx_coa                    ON financial_transactions(coa_id);
