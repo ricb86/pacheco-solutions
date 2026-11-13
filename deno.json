@@ -7,7 +7,8 @@
     "security:check": "deno run -A --no-check scripts/security-check.ts",
     "package": "bash scripts/build-package.sh",
     "package:deb": "bash scripts/build-deb.sh",
-    "package:installer": "bash scripts/build-installer.sh"
+    "package:installer": "bash scripts/build-installer.sh",
+    "package:windows": "bash scripts/build-windows.sh"
   },
   "nodeModulesDir": "auto",
   "compilerOptions": {

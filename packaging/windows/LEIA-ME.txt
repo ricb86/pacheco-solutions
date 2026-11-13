@@ -1,0 +1,71 @@
+═══════════════════════════════════════════════════════════════
+ PACHECO SOLUTIONS — aplicativo para Windows 10/11 (64 bits)
+═══════════════════════════════════════════════════════════════
+
+INSTALAÇÃO (não precisa de administrador)
+
+ 1. Dê um duplo clique no instalador:
+      pacheco-solutions-*-windows-x64-instalador.exe
+
+ 2. Se o Windows mostrar "O Windows protegeu o seu PC"
+    (SmartScreen), clique em "Mais informações" e depois em
+    "Executar assim mesmo". O aplicativo não é assinado
+    digitalmente, por isso o aviso aparece.
+
+ 3. Siga o assistente. Por padrão ele instala só para o seu
+    usuário, em:
+      %LOCALAPPDATA%\Programs\PACHECO SOLUTIONS
+
+ 4. Ao final, deixe marcado "Abrir o PACHECO SOLUTIONS agora"
+    ou abra pelo Menu Iniciar / atalho da Área de Trabalho.
+
+O aplicativo abre no seu navegador em http://localhost:3001.
+Na primeira vez, use a tela "Criar conta" para criar seu usuário.
+
+COMANDOS (opcional)
+
+  Abra "PACHECO SOLUTIONS > Comandos (prompt)" no Menu Iniciar
+  ou use o prompt na pasta de instalação:
+      pacheco.cmd              inicia e abre no navegador
+      pacheco.cmd start        inicia o servidor (sem navegador)
+      pacheco.cmd stop         encerra o servidor
+      pacheco.cmd restart      reinicia
+      pacheco.cmd status       mostra se está ativo
+      pacheco.cmd logs         acompanha o log
+      pacheco.cmd config       abre o .env no Notepad
+      pacheco.cmd pasta        abre a pasta de dados
+      pacheco.cmd uninstall    abre o desinstalador
+
+ONDE FICAM SEUS DADOS
+
+  Banco de dados:  %LOCALAPPDATA%\PACHECO SOLUTIONS\pacheco.db
+  Log:             %LOCALAPPDATA%\PACHECO SOLUTIONS\pacheco.log
+  Configuração:    %APPDATA%\PACHECO SOLUTIONS\.env
+
+Faça backup da pasta %LOCALAPPDATA%\PACHECO SOLUTIONS com o
+aplicativo parado. A desinstalação NÃO apaga seus dados, a menos
+que você confirme a remoção no desinstalador.
+
+REQUISITOS
+
+  - Windows 10 ou 11, 64 bits
+  - Navegador moderno (Edge, Chrome, Firefox)
+  - Não é necessário ter Deno, Node, Docker ou banco de dados
+  - Não é necessário administrador para instalar
+  - O servidor escuta apenas em 127.0.0.1 (localhost), portanto
+    não fica exposto na rede e não precisa liberar firewall
+
+SOLUÇÃO DE PROBLEMAS
+
+  - Porta 3001 ocupada: abra "pacheco.cmd config", altere
+    PORT=3001 para outra porta (ex.: 3010), salve e rode
+    "pacheco.cmd restart". Depois abra http://localhost:3010
+  - O servidor não inicia: veja o log com "pacheco.cmd logs"
+  - SmartScreen bloqueou: "Mais informações" > "Executar assim mesmo"
+  - Antivírus: o executável é gerado com Deno e não é assinado;
+    se necessário, confira o hash SHA-256 publicado ao lado do
+    instalador antes de executar
+  - Para remover: Configurações > Aplicativos > PACHECO SOLUTIONS
+    > Desinstalar (ou "pacheco.cmd uninstall")
+
+═══════════════════════════════════════════════════════════════

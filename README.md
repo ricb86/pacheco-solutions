@@ -121,6 +121,100 @@ com o aplicativo parado.
 > O pacote `.deb` instala o programa em `/usr` (requer `sudo` **apenas para
 > instalar**); os dados continuam por usuário, em `~`.
 
+## 🪟 Instalação no Windows (10/11, 64 bits)
+
+O PACHECO SOLUTIONS também pode ser instalado no Windows como um aplicativo
+comum, **sem administrador, sem Deno, Node.js, Docker ou banco de dados** — o
+servidor é compilado em um único `.exe` e o SQLite vai embutido no binário.
+
+### Gerar o instalador
+
+```bash
+deno task package:windows
+```
+
+O script compila o alvo `x86_64-pc-windows-msvc` e gera, em `dist/`:
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `pacheco-solutions-1.2.0-windows-x64-instalador.exe` | instalador NSIS (recomendado) |
+| `PACHECO-SOLUTIONS-Instalador-Windows.exe` | cópia com nome curto (mesmo conteúdo) |
+| `pacheco-solutions-1.2.0-windows-x64.zip` | pasta portátil (extrair e executar) |
+| `pacheco-solutions-1.2.0-windows-x64.sha256` | hashes SHA-256 dos arquivos |
+
+Dependências **de build** no Linux: `deno`, `makensis` (NSIS 3),
+`rsvg-convert` (librsvg2-bin), `python3` e `zip`:
+
+```bash
+sudo apt install nsis librsvg2-bin python3 zip
+```
+
+### Instalar no Windows
+
+1. Copie o `.exe` do instalador para o computador Windows.
+2. Dê um duplo clique. Se aparecer **“O Windows protegeu o seu PC”**
+   (SmartScreen), clique em **“Mais informações” → “Executar assim mesmo”**.
+   O executável não é assinado digitalmente; o aviso é esperado.
+3. Siga o assistente. A instalação é **por usuário** (sem UAC), em:
+
+   ```text
+   %LOCALAPPDATA%\Programs\PACHECO SOLUTIONS
+   ```
+
+4. Ao final, deixe marcado **“Abrir o PACHECO SOLUTIONS agora”** ou use o
+   atalho do Menu Iniciar / Área de Trabalho.
+
+O aplicativo abre no navegador em `http://localhost:3001`. O servidor escuta
+apenas em `127.0.0.1`, portanto não fica exposto na rede e não exige liberação
+no firewall. Na primeira execução, use **Criar conta** para cadastrar seu
+usuário.
+
+> **Portátil:** o `.zip` contém a mesma pasta do aplicativo. Extraia em qualquer
+> pasta e execute `pacheco-launcher.vbs` (ou `pacheco.cmd`) — não precisa
+> instalar. Os dados continuam em `%LOCALAPPDATA%` / `%APPDATA%`.
+
+### Comandos no Windows
+
+Abra **PACHECO SOLUTIONS → Comandos (prompt)** no Menu Iniciar ou use o
+`pacheco.cmd` na pasta de instalação:
+
+| Comando | Descrição |
+|---------|-----------|
+| `pacheco.cmd` | inicia e abre no navegador |
+| `pacheco.cmd start` | inicia o servidor em segundo plano (sem navegador) |
+| `pacheco.cmd stop` | encerra o servidor |
+| `pacheco.cmd restart` | reinicia |
+| `pacheco.cmd status` | mostra processo, health check, porta e caminhos |
+| `pacheco.cmd logs` | acompanha o log em tempo real |
+| `pacheco.cmd config` | abre o `.env` no Notepad |
+| `pacheco.cmd pasta` | abre a pasta de dados |
+| `pacheco.cmd uninstall` | abre o desinstalador |
+
+### Onde ficam os dados no Windows
+
+| Conteúdo | Caminho |
+|----------|---------|
+| Programa | `%LOCALAPPDATA%\Programs\PACHECO SOLUTIONS` |
+| Banco SQLite | `%LOCALAPPDATA%\PACHECO SOLUTIONS\pacheco.db` |
+| Log | `%LOCALAPPDATA%\PACHECO SOLUTIONS\pacheco.log` |
+| Configuração (`.env`, JWT) | `%APPDATA%\PACHECO SOLUTIONS\.env` |
+
+O `JWT_SECRET` é gerado automaticamente na primeira execução. Para backup,
+copie `%LOCALAPPDATA%\PACHECO SOLUTIONS` com o aplicativo parado. A
+desinstalação **não apaga os dados**, a menos que você confirme a remoção no
+desinstalador.
+
+### Solução de problemas (Windows)
+
+- **SmartScreen / antivírus:** o `.exe` não é assinado. Use “Mais informações →
+  Executar assim mesmo” ou confira o SHA-256 publicado ao lado do instalador.
+- **Porta 3001 ocupada:** `pacheco.cmd config`, altere `PORT=3001` para outra
+  porta (ex.: `3010`), salve e rode `pacheco.cmd restart`; abra
+  `http://localhost:3010`.
+- **Servidor não inicia:** veja `pacheco.cmd logs` e o arquivo de log indicado.
+- **Remover:** Configurações → Aplicativos → PACHECO SOLUTIONS → Desinstalar,
+  ou `pacheco.cmd uninstall`.
+
 ## 👤 Contas de demonstração
 
 | Email                | Senha     | Papel  | Saldo inicial |
@@ -271,13 +365,19 @@ scripts/
 ├── security-check.ts # verificação de segurança (deno task security:check)
 ├── build-package.sh  # gera o pacote portátil .tar.gz (deno task package)
 ├── build-deb.sh      # gera o pacote Debian .deb (deno task package:deb)
-└── build-installer.sh # gera o instalador único .run (deno task package:installer)
+├── build-installer.sh # gera o instalador único .run (deno task package:installer)
+└── build-windows.sh  # gera o instalador .exe + zip Windows (deno task package:windows)
 packaging/            # arquivos usados no empacotamento
 ├── pacheco           # comando de controle (start/stop/status/logs)
 ├── instalar.sh       # instalador por usuário (~/.local, sem sudo)
 ├── desinstalar.sh    # desinstalador (mantém os dados)
 ├── pacheco.desktop   # modelo do atalho no menu de aplicativos
-└── LEIA-ME.txt       # instruções incluídas no pacote
+├── LEIA-ME.txt       # instruções incluídas no pacote
+└── windows/          # instalador NSIS + launcher/controle do Windows
+    ├── installer.nsi # instalador por usuário (%LOCALAPPDATA%, sem UAC)
+    ├── pacheco-launcher.vbs # inicia o servidor oculto e abre o navegador
+    ├── pacheco.cmd   # comandos start/stop/status/logs/config
+    └── LEIA-ME.txt   # instruções do pacote Windows
 schema.sql            # schema SQLite (documentação; aplicado no boot)
 legacy/               # arquivos da pilha original (Node/Postgres/Docker)
 ```
@@ -294,6 +394,7 @@ legacy/               # arquivos da pilha original (Node/Postgres/Docker)
 | `deno task package`        | gera o pacote portátil `.tar.gz` (x64)     |
 | `deno task package:deb`    | gera o pacote Debian `.deb` (amd64)        |
 | `deno task package:installer` | gera o instalador único `.run` (x64)    |
+| `deno task package:windows` | gera o instalador `.exe` + zip (Windows x64) |
 
 ## 🛡️ Segurança
 

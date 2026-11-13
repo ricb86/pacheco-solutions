@@ -5,10 +5,11 @@
  *
  *  1. Desenvolvimento (deno run): raiz = pasta do projeto; banco em data/.
  *  2. Instalado (binário do `deno compile`): raiz = pasta do executável
- *     (contém public/); dados, configuração e estado em diretórios XDG:
- *       ~/.config/pacheco-solutions   → .env (JWT_SECRET gerado no 1º uso)
- *       ~/.local/share/pacheco-solutions → pacheco.db
- *       ~/.local/state/pacheco-solutions → logs/PID (usados pelo launcher)
+ *     (contém public/); dados, configuração e estado ficam por usuário:
+ *       Linux:   ~/.config, ~/.local/share e ~/.local/state
+ *       Windows: %APPDATA%\PACHECO SOLUTIONS (config/.env)
+ *                %LOCALAPPDATA%\PACHECO SOLUTIONS (banco/logs/estado)
+ *     No Linux os caminhos seguem XDG; no Windows seguem APPDATA/LOCALAPPDATA.
  *
  * Variáveis de ambiente podem sobrescrever tudo:
  *  PACHECO_HOME, PACHECO_CONFIG_DIR, PACHECO_DATA_DIR, PACHECO_STATE_DIR,
@@ -34,8 +35,13 @@ const DEV_ROOT = resolve(
 /** true quando executado como binário compilado (`deno compile`). */
 const IS_STANDALONE = Deno.build.standalone;
 
-/** HOME do usuário (fallback para ambientes sem $HOME). */
-const HOME = process.env.HOME?.trim() || '.';
+/** true quando o binário está rodando no Windows. */
+const IS_WINDOWS = Deno.build.os === 'windows';
+
+/** HOME do usuário (Windows usa USERPROFILE; fallback para ambientes sem $HOME). */
+const HOME = IS_WINDOWS
+  ? (process.env.USERPROFILE?.trim() || process.env.HOME?.trim() || '.')
+  : (process.env.HOME?.trim() || '.');
 
 /** Resolve um diretório XDG (ou variável própria) com fallback. */
 function dirFromEnv(envVar: string, xdgVar: string, xdgFallback: string): string {
@@ -45,6 +51,32 @@ function dirFromEnv(envVar: string, xdgVar: string, xdgFallback: string): string
   const base = process.env[xdgVar]?.trim();
   const root = base && isAbsolute(base) ? base : join(HOME, xdgFallback);
   return join(root, 'pacheco-solutions');
+}
+
+/**
+ * Resolve um diretório por usuário no Windows.
+ *   APPDATA      → %APPDATA%\PACHECO SOLUTIONS      (configuração/.env)
+ *   LOCALAPPDATA → %LOCALAPPDATA%\PACHECO SOLUTIONS (banco/logs/estado)
+ */
+function windowsDirFromEnv(
+  envVar: string,
+  baseVar: 'APPDATA' | 'LOCALAPPDATA',
+): string {
+  const custom = process.env[envVar]?.trim();
+  if (custom) return resolve(custom);
+
+  const base = process.env[baseVar]?.trim() ||
+    join(HOME, 'AppData', baseVar === 'APPDATA' ? 'Roaming' : 'Local');
+  return join(base, 'PACHECO SOLUTIONS');
+}
+
+/** chmod é opcional no Windows (permissões POSIX não se aplicam). */
+function safeChmod(path: string, mode: number): void {
+  try {
+    chmodSync(path, mode);
+  } catch {
+    // Ignora: no Windows o controle de acesso é feito por ACLs.
+  }
 }
 
 /**
@@ -60,15 +92,21 @@ export const PROJECT_ROOT = (() => {
 
 /** Diretórios de configuração, dados e estado. */
 const CONFIG_DIR = IS_STANDALONE
-  ? dirFromEnv('PACHECO_CONFIG_DIR', 'XDG_CONFIG_HOME', '.config')
+  ? (IS_WINDOWS
+    ? windowsDirFromEnv('PACHECO_CONFIG_DIR', 'APPDATA')
+    : dirFromEnv('PACHECO_CONFIG_DIR', 'XDG_CONFIG_HOME', '.config'))
   : PROJECT_ROOT;
 
 const DATA_DIR = IS_STANDALONE
-  ? dirFromEnv('PACHECO_DATA_DIR', 'XDG_DATA_HOME', '.local/share')
+  ? (IS_WINDOWS
+    ? windowsDirFromEnv('PACHECO_DATA_DIR', 'LOCALAPPDATA')
+    : dirFromEnv('PACHECO_DATA_DIR', 'XDG_DATA_HOME', '.local/share'))
   : join(PROJECT_ROOT, 'data');
 
 const STATE_DIR = IS_STANDALONE
-  ? dirFromEnv('PACHECO_STATE_DIR', 'XDG_STATE_HOME', '.local/state')
+  ? (IS_WINDOWS
+    ? DATA_DIR
+    : dirFromEnv('PACHECO_STATE_DIR', 'XDG_STATE_HOME', '.local/state'))
   : DATA_DIR;
 
 /** Lê o .env (config dir no modo instalado; raiz no desenvolvimento). */
@@ -155,7 +193,7 @@ function ensureJwtSecret(): void {
     );
   }
 
-  chmodSync(envPath, 0o600);
+  safeChmod(envPath, 0o600);
   process.env.JWT_SECRET = secret;
   // Coerência no primeiro uso: o .env recém-criado define NODE_ENV=production.
   if (!process.env.NODE_ENV) process.env.NODE_ENV = 'production';
