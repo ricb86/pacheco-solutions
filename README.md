@@ -40,9 +40,29 @@ O PACHECO SOLUTIONS pode ser instalado como um aplicativo comum do sistema,
 **sem precisar de Deno, Node.js, Docker ou banco de dados** — o servidor é
 compilado em um único binário e o SQLite é embutido.
 
-### Opção 1 — pacote Debian/Ubuntu (`.deb`)
+### Opção 1 — arquivo único `.run` (mais fácil, sem root)
 
-Recomendado para Ubuntu, Debian, Linux Mint, Pop!_OS e derivados:
+Ideal para **levar em um pendrive e instalar em outro desktop**. É um único
+arquivo que contém o programa completo — funciona em qualquer Linux x86_64,
+sem `sudo`, sem `dpkg` e sem dependências:
+
+```bash
+# gera o instalador (no diretório do projeto)
+deno task package:installer
+
+# no outro computador: copie o arquivo .run e execute
+bash pacheco-solutions-1.2.0-instalador-linux-x64.run
+```
+
+O instalador extrai o aplicativo temporariamente e instala em `~/.local`:
+programa, comando `pacheco`, atalho no menu e ícone. O arquivo temporário é
+removido ao final. Se o pendrive remover a permissão de execução, `bash
+arquivo.run` continua funcionando.
+
+### Opção 2 — pacote Debian/Ubuntu (`.deb`)
+
+Recomendado para Ubuntu, Debian, Linux Mint, Pop!_OS e derivados (instalação
+para todos os usuários, requer `sudo` apenas no momento de instalar):
 
 ```bash
 # gera o pacote (no diretório do projeto)
@@ -55,9 +75,9 @@ sudo apt install ./dist/pacheco-solutions_1.2.0_amd64.deb
 Depois abra **PACHECO SOLUTIONS** no menu de aplicativos ou rode `pacheco`.
 Para remover: `sudo apt remove pacheco-solutions` (seus dados são mantidos).
 
-### Opção 2 — pacote portátil (`.tar.gz`, sem root)
+### Opção 3 — pacote portátil (`.tar.gz`, sem root)
 
-Serve para qualquer distribuição Linux x86_64:
+Para quem prefere o formato compactado tradicional:
 
 ```bash
 deno task package
@@ -247,7 +267,8 @@ scripts/
 ├── seed.ts           # dados de demonstração (deno task seed)
 ├── security-check.ts # verificação de segurança (deno task security:check)
 ├── build-package.sh  # gera o pacote portátil .tar.gz (deno task package)
-└── build-deb.sh      # gera o pacote Debian .deb (deno task package:deb)
+├── build-deb.sh      # gera o pacote Debian .deb (deno task package:deb)
+└── build-installer.sh # gera o instalador único .run (deno task package:installer)
 packaging/            # arquivos usados no empacotamento
 ├── pacheco           # comando de controle (start/stop/status/logs)
 ├── instalar.sh       # instalador por usuário (~/.local, sem sudo)
@@ -269,6 +290,7 @@ legacy/               # arquivos da pilha original (Node/Postgres/Docker)
 | `deno task security:check` | varredura de segurança básica              |
 | `deno task package`        | gera o pacote portátil `.tar.gz` (x64)     |
 | `deno task package:deb`    | gera o pacote Debian `.deb` (amd64)        |
+| `deno task package:installer` | gera o instalador único `.run` (x64)    |
 
 ## 🛡️ Segurança
 
