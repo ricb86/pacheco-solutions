@@ -1,0 +1,53 @@
+═══════════════════════════════════════════════════════════════
+ PACHECO SOLUTIONS — aplicativo para Linux (x86_64)
+═══════════════════════════════════════════════════════════════
+
+INSTALAÇÃO (não precisa de sudo)
+
+ 1. Extraia o pacote:
+      tar -xzf pacheco-solutions-*-linux-x64.tar.gz
+      cd pacheco-solutions-*-linux-x64
+
+ 2. Instale:
+      ./instalar.sh
+
+ 3. Abra pelo menu de aplicativos ("PACHECO SOLUTIONS")
+    ou pelo terminal:
+      pacheco
+
+O aplicativo abre no seu navegador em http://localhost:3001.
+Na primeira vez, use a tela de cadastro para criar sua conta.
+
+COMANDOS
+
+  pacheco              inicia e abre no navegador
+  pacheco start        inicia o servidor
+  pacheco stop         encerra o servidor
+  pacheco restart      reinicia
+  pacheco status       mostra se está ativo
+  pacheco logs         acompanha o log
+  pacheco desinstalar  remove o aplicativo
+
+ONDE FICAM SEUS DADOS
+
+  Banco de dados:  ~/.local/share/pacheco-solutions/pacheco.db
+  Configuração:    ~/.config/pacheco-solutions/.env
+  Log:             ~/.local/state/pacheco-solutions/pacheco.log
+
+Faça backup da pasta ~/.local/share/pacheco-solutions com o app parado.
+A desinstalação NÃO apaga seus dados.
+
+REQUISITOS
+
+  - Linux x86_64 (testado em Ubuntu/Debian)
+  - Navegador moderno (Chrome, Firefox, Edge)
+  - Não é necessário ter Deno, Node ou banco de dados instalado
+
+SOLUÇÃO DE PROBLEMAS
+
+  - Porta 3001 ocupada: edite PORT= em ~/.config/pacheco-solutions/.env
+    e rode: pacheco restart
+  - O servidor não inicia: veja o log com "pacheco logs"
+  - Comando "pacheco" não encontrado: saia e entre na sessão novamente
+    (o ~/.local/bin entra no PATH ao iniciar uma nova sessão)
+═══════════════════════════════════════════════════════════════

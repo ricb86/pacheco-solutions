@@ -34,6 +34,70 @@ Na primeira execução o lançador:
 3. cria o banco SQLite com dados de demonstração (`deno task seed`),
 4. abre a interface web no navegador padrão (`http://localhost:3001`).
 
+## 📦 Instalação no Linux (aplicativo)
+
+O PACHECO SOLUTIONS pode ser instalado como um aplicativo comum do sistema,
+**sem precisar de Deno, Node.js, Docker ou banco de dados** — o servidor é
+compilado em um único binário e o SQLite é embutido.
+
+### Opção 1 — pacote Debian/Ubuntu (`.deb`)
+
+Recomendado para Ubuntu, Debian, Linux Mint, Pop!_OS e derivados:
+
+```bash
+# gera o pacote (no diretório do projeto)
+deno task package:deb
+
+# instala
+sudo apt install ./dist/pacheco-solutions_1.2.0_amd64.deb
+```
+
+Depois abra **PACHECO SOLUTIONS** no menu de aplicativos ou rode `pacheco`.
+Para remover: `sudo apt remove pacheco-solutions` (seus dados são mantidos).
+
+### Opção 2 — pacote portátil (`.tar.gz`, sem root)
+
+Serve para qualquer distribuição Linux x86_64:
+
+```bash
+deno task package
+tar -xzf dist/pacheco-solutions-1.2.0-linux-x64.tar.gz
+cd pacheco-solutions-1.2.0-linux-x64
+./instalar.sh
+```
+
+O instalador coloca tudo em `~/.local` (programa, comando `pacheco`, atalho
+no menu e ícone) — não usa `sudo`.
+
+### Comandos do aplicativo instalado
+
+| Comando | Descrição |
+|---------|-----------|
+| `pacheco` | inicia o servidor e abre a interface no navegador |
+| `pacheco start` | inicia em segundo plano |
+| `pacheco stop` | encerra o servidor |
+| `pacheco restart` | reinicia |
+| `pacheco status` | mostra se está ativo |
+| `pacheco logs` | acompanha o log em tempo real |
+| `pacheco desinstalar` | remove o programa (mantém dados) — pacote `.tar.gz` |
+
+A interface abre em `http://localhost:3001` (somente na própria máquina).
+
+### Onde ficam os dados
+
+| Conteúdo | Caminho |
+|----------|---------|
+| Banco SQLite | `~/.local/share/pacheco-solutions/pacheco.db` |
+| Configuração (`.env`, JWT) gerada no 1º uso | `~/.config/pacheco-solutions/.env` |
+| Log e PID | `~/.local/state/pacheco-solutions/` |
+
+O `JWT_SECRET` é gerado automaticamente na primeira execução (arquivo com
+permissão `600`). Para fazer backup, copie `~/.local/share/pacheco-solutions`
+com o aplicativo parado.
+
+> O pacote `.deb` instala o programa em `/usr` (requer `sudo` **apenas para
+> instalar**); os dados continuam por usuário, em `~`.
+
 ## 👤 Contas de demonstração
 
 | Email                | Senha     | Papel  | Saldo inicial |
@@ -181,7 +245,15 @@ src/
 └── utils/            # logger, dinheiro/status financeiros
 scripts/
 ├── seed.ts           # dados de demonstração (deno task seed)
-└── security-check.ts # verificação de segurança (deno task security:check)
+├── security-check.ts # verificação de segurança (deno task security:check)
+├── build-package.sh  # gera o pacote portátil .tar.gz (deno task package)
+└── build-deb.sh      # gera o pacote Debian .deb (deno task package:deb)
+packaging/            # arquivos usados no empacotamento
+├── pacheco           # comando de controle (start/stop/status/logs)
+├── instalar.sh       # instalador por usuário (~/.local, sem sudo)
+├── desinstalar.sh    # desinstalador (mantém os dados)
+├── pacheco.desktop   # modelo do atalho no menu de aplicativos
+└── LEIA-ME.txt       # instruções incluídas no pacote
 schema.sql            # schema SQLite (documentação; aplicado no boot)
 legacy/               # arquivos da pilha original (Node/Postgres/Docker)
 ```
@@ -195,6 +267,8 @@ legacy/               # arquivos da pilha original (Node/Postgres/Docker)
 | `deno task seed`           | cria/atualiza dados de demonstração        |
 | `deno task check`          | checagem de tipos (TypeScript strict)      |
 | `deno task security:check` | varredura de segurança básica              |
+| `deno task package`        | gera o pacote portátil `.tar.gz` (x64)     |
+| `deno task package:deb`    | gera o pacote Debian `.deb` (amd64)        |
 
 ## 🛡️ Segurança
 

@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════
+#  PACHECO SOLUTIONS — controle do aplicativo instalado
+#
+#  Uso:
+#    pacheco              inicia e abre no navegador
+#    pacheco start        inicia o servidor
+#    pacheco stop         encerra o servidor
+#    pacheco restart      reinicia o servidor
+#    pacheco status       mostra se está ativo
+#    pacheco open         inicia (se preciso) e abre o navegador
+#    pacheco logs         acompanha o log em tempo real
+#    pacheco desinstalar  remove o aplicativo (mantém seus dados)
+# ═══════════════════════════════════════════════════════════════
+set -uo pipefail
+
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+PREFIX="$(cd "$(dirname "$SELF")/.." && pwd)"
+LIB="$PREFIX/lib/pacheco-solutions"
+APP="$LIB/pacheco-server"
+
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/pacheco-solutions"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/pacheco-solutions"
+PID_FILE="$STATE/pacheco.pid"
+LOG_FILE="$STATE/pacheco.log"
+
+read_port() {
+  local p=""
+  if [ -f "$CONFIG/.env" ]; then
+    p="$(sed -n 's/^[[:space:]]*PORT[[:space:]]*=[[:space:]]*\([0-9]\{1,5\}\).*/\1/p' "$CONFIG/.env" | tail -n1)"
+  fi
+  printf '%s' "${PORT:-${p:-3001}}"
+}
+
+is_running() {
+  [ -f "$PID_FILE" ] || return 1
+  local pid
+  pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+  [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+health_ok() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsS --max-time 1 "http://127.0.0.1:$1/health" >/dev/null 2>&1
+  else
+    (exec 3<>"/dev/tcp/127.0.0.1/$1") >/dev/null 2>&1
+  fi
+}
+
+start() {
+  local port; port="$(read_port)"
+
+  if is_running; then
+    echo "✅ PACHECO SOLUTIONS já está ativo em http://localhost:$port (PID $(cat "$PID_FILE"))"
+    return 0
+  fi
+  rm -f "$PID_FILE"
+
+  if [ ! -x "$APP" ]; then
+    echo "❌ Executável não encontrado: $APP"
+    echo "   Reinstale com: ./instalar.sh"
+    return 1
+  fi
+
+  mkdir -p "$STATE"
+  echo "⏳ Iniciando PACHECO SOLUTIONS..."
+  cd "$LIB" || return 1
+
+  # O PID é gravado de dentro do processo que fará exec do binário,
+  # garantindo que ele continue válido mesmo com setsid.
+  if command -v setsid >/dev/null 2>&1; then
+    setsid bash -c 'echo $$ > "$1"; exec "$2" >> "$3" 2>&1 < /dev/null' \
+      _ "$PID_FILE" "$APP" "$LOG_FILE" &
+  else
+    bash -c 'echo $$ > "$1"; exec "$2" >> "$3" 2>&1 < /dev/null' \
+      _ "$PID_FILE" "$APP" "$LOG_FILE" &
+  fi
+
+  for _ in $(seq 1 60); do
+    if health_ok "$port"; then
+      echo "✅ Ativo em http://localhost:$port"
+      echo "   Log: $LOG_FILE"
+      return 0
+    fi
+    if [ -f "$PID_FILE" ] && ! is_running; then break; fi
+    sleep 0.25
+  done
+
+  echo "❌ Não foi possível iniciar. Últimas linhas do log:"
+  tail -n 20 "$LOG_FILE" 2>/dev/null || true
+  return 1
+}
+
+stop() {
+  if ! is_running; then
+    echo "ℹ️  PACHECO SOLUTIONS não está em execução."
+    rm -f "$PID_FILE"
+    return 0
+  fi
+
+  local pid; pid="$(cat "$PID_FILE")"
+  echo "⏹️  Encerrando (PID $pid)..."
+
+  kill "$pid" 2>/dev/null || true
+  for _ in $(seq 1 40); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      rm -f "$PID_FILE"
+      echo "✅ Encerrado."
+      return 0
+    fi
+    sleep 0.25
+  done
+
+  kill -9 "$pid" 2>/dev/null || true
+  rm -f "$PID_FILE"
+  echo "✅ Encerrado (forçado)."
+}
+
+open_app() {
+  local port; port="$(read_port)"
+  start || return 1
+
+  local url="http://localhost:$port"
+  if [ -n "${PACHECO_NO_BROWSER:-}" ]; then
+    echo "🌐 $url"
+    return 0
+  fi
+
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$url" >/dev/null 2>&1 || echo "🌐 Abra manualmente: $url"
+  else
+    echo "🌐 Abra manualmente: $url"
+  fi
+}
+
+status() {
+  local port; port="$(read_port)"
+  if is_running; then
+    echo "✅ PACHECO SOLUTIONS ativo"
+    echo "   URL:  http://localhost:$port"
+    echo "   PID:  $(cat "$PID_FILE")"
+  else
+    echo "⏸️  PACHECO SOLUTIONS parado"
+    echo "   Inicie com: pacheco"
+  fi
+  echo "   Log:  $LOG_FILE"
+}
+
+case "${1:-open}" in
+  open)         open_app ;;
+  start)        start ;;
+  stop)         stop ;;
+  restart)      stop; start ;;
+  status)       status ;;
+  logs|log)     [ -f "$LOG_FILE" ] || { echo "Ainda não há log em $LOG_FILE"; exit 0; }; tail -n 50 -f "$LOG_FILE" ;;
+  desinstalar|uninstall) exec "$LIB/desinstalar.sh" "${@:2}" ;;
+  help|-h|--help)
+    sed -n '2,14p' "$SELF" | sed 's/^# \{0,1\}//'
+    ;;
+  *)
+    echo "Comando desconhecido: $1"
+    echo "Use: pacheco [start|stop|restart|status|open|logs|desinstalar]"
+    exit 1
+    ;;
+esac

@@ -12,8 +12,6 @@
  */
 
 import express from 'express';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { config } from './config/env.ts';
 import { connectDatabase } from './config/database.ts';
 import { logger } from './utils/logger.ts';
@@ -27,8 +25,9 @@ import { notFound, errorHandler } from './middleware/errorHandler.ts';
 
 const app = express();
 
-// Diretório da interface web (public/) — servido na raiz do servidor
-const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
+// Diretório da interface web (public/) — servido na raiz do servidor.
+// No modo instalado fica ao lado do binário (ex.: ~/.local/lib/pacheco-solutions/public).
+const PUBLIC_DIR = config.publicDir;
 
 app.disable('x-powered-by');
 app.use(securityHeaders);
@@ -59,7 +58,7 @@ app.use(express.static(PUBLIC_DIR));
 app.get('/api', (_req, res) => {
   res.status(200).json({
     name: 'PACHECO SOLUTIONS',
-    version: '1.1.0',
+    version: '1.2.0',
     docs: {
       health: 'GET /health',
       register: 'POST /auth/register',
@@ -84,7 +83,7 @@ app.use(errorHandler);
 async function start() {
   await connectDatabase();
 
-  app.listen(config.port, () => {
+  app.listen(config.port, config.host, () => {
     logger.info('═════════════════════════════════════════════════');
     logger.info('      PACHECO SOLUTIONS — SERVIDOR ATIVO           ');
     logger.info('═════════════════════════════════════════════════');
@@ -93,6 +92,7 @@ async function start() {
     logger.info(`📖 API (JSON):        http://localhost:${config.port}/api`);
     logger.info(`💰 Transações:       http://localhost:${config.port}/transactions`);
     logger.info(`   Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`   Dados:    ${config.dataDir}`);
     logger.info('═════════════════════════════════════════════════');
   });
 }

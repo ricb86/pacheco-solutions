@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=PACHECO SOLUTIONS
+GenericName=Gestão Financeira
+Comment=Contas, movimentações, transferências e relatórios financeiros
+Exec=@EXEC@ open
+Icon=@ICON@
+Terminal=false
+Categories=Office;Finance;
+Keywords=financeiro;financas;gestao;contas;relatorios;
+StartupNotify=true
+StartupWMClass=pacheco-solutions

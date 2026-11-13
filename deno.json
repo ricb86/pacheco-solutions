@@ -4,7 +4,9 @@
     "dev": "deno run -A --watch src/index.ts",
     "seed": "deno run -A --no-check scripts/seed.ts",
     "check": "deno check src/index.ts scripts/seed.ts",
-    "security:check": "deno run -A --no-check scripts/security-check.ts"
+    "security:check": "deno run -A --no-check scripts/security-check.ts",
+    "package": "bash scripts/build-package.sh",
+    "package:deb": "bash scripts/build-deb.sh"
   },
   "nodeModulesDir": "auto",
   "compilerOptions": {
