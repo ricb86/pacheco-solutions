@@ -59,6 +59,9 @@ programa, comando `pacheco`, atalho no menu e ícone. O arquivo temporário é
 removido ao final. Se o pendrive remover a permissão de execução, `bash
 arquivo.run` continua funcionando.
 
+> Também é gerada uma cópia com nome curto, `PACHECO-SOLUTIONS-Instalador.run`,
+> para facilitar copiar em pendrive. O conteúdo é idêntico.
+
 ### Opção 2 — pacote Debian/Ubuntu (`.deb`)
 
 Recomendado para Ubuntu, Debian, Linux Mint, Pop!_OS e derivados (instalação

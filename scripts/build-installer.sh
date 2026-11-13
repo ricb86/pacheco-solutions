@@ -102,10 +102,16 @@ chmod 755 "$OUT"
 
 ( cd "$DIST" && sha256sum "$(basename "$OUT")" > "$(basename "$OUT").sha256" )
 
+# Cópia com nome curto, para facilitar copiar em pendrive
+SHORT="$DIST/PACHECO-SOLUTIONS-Instalador.run"
+cp -f "$OUT" "$SHORT"
+( cd "$DIST" && sha256sum "$(basename "$SHORT")" > "$(basename "$SHORT").sha256" )
+
 echo
 echo "✅ Instalador único gerado:"
 du -h "$OUT" | sed 's/^/   /'
 echo "   $OUT"
+echo "   $SHORT  (nome curto)"
 echo "   $OUT.sha256"
 echo
 echo "Para instalar no outro desktop, copie o arquivo .run e rode:"
