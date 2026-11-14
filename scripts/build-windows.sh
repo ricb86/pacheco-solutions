@@ -130,7 +130,7 @@ cp "$ROOT/packaging/windows/pacheco-launcher.vbs" "$APP/pacheco-launcher.vbs"
 cp "$ROOT/packaging/windows/pacheco.cmd" "$APP/pacheco.cmd"
 
 # Codificações amigáveis ao Windows:
-#   .vbs → UTF-16 LE com BOM (WSH exibe acentos corretamente)
+#   .vbs → ANSI/Windows-1252 + CRLF (WSH pt-BR; evita BOM)
 #   .txt → UTF-8 com BOM + CRLF (Notepad)
 #   .cmd → CRLF (ASCII)
 python3 - "$APP" <<'PY'
@@ -139,8 +139,8 @@ from pathlib import Path
 
 app = Path(sys.argv[1])
 
-def write_utf16(path: Path, data: str) -> None:
-    path.write_bytes(b"\xff\xfe" + data.replace("\n", "\r\n").encode("utf-16-le"))
+def write_cp1252(path: Path, data: str) -> None:
+    path.write_bytes(data.replace("\n", "\r\n").encode("cp1252"))
 
 def write_utf8_bom(path: Path, data: str) -> None:
     path.write_bytes(b"\xef\xbb\xbf" + data.replace("\n", "\r\n").encode("utf-8"))
@@ -149,7 +149,7 @@ def write_crlf(path: Path, data: str) -> None:
     path.write_bytes(data.replace("\n", "\r\n").encode("ascii"))
 
 vbs = app / "pacheco-launcher.vbs"
-write_utf16(vbs, vbs.read_text(encoding="utf-8"))
+write_cp1252(vbs, vbs.read_text(encoding="utf-8"))
 
 readme = app / "LEIA-ME.txt"
 write_utf8_bom(readme, readme.read_text(encoding="utf-8"))

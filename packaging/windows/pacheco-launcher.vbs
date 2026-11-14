@@ -1,4 +1,4 @@
-' ═══════════════════════════════════════════════════════════════
+' ===============================================================
 '  PACHECO SOLUTIONS — inicializador para Windows 10/11
 '
 '  Inicia o servidor local SEM janela de console e abre o
@@ -8,11 +8,11 @@
 '  Uso:
 '    wscript.exe pacheco-launcher.vbs
 '    wscript.exe pacheco-launcher.vbs --no-browser
-' ═══════════════════════════════════════════════════════════════
+' ===============================================================
 Option Explicit
 
 Dim fso, sh, scriptDir, exePath, configDir, dataDir, envFile, logFile
-Dim port, url, noBrowser, ok, i, cmd
+Dim port, url, noBrowser, ok, i, cmd, comspec
 
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set sh = CreateObject("WScript.Shell")
@@ -21,10 +21,10 @@ scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)
 exePath = fso.BuildPath(scriptDir, "pacheco-server.exe")
 
 ' Mesmos diretórios usados pelo aplicativo no Windows:
-'   configuração/.env → %APPDATA%\PACHECO SOLUTIONS
-'   banco/log         → %LOCALAPPDATA%\PACHECO SOLUTIONS
-configDir = fso.BuildPath(sh.ExpandEnvironmentStrings("%APPDATA%"), "PACHECO SOLUTIONS")
-dataDir = fso.BuildPath(sh.ExpandEnvironmentStrings("%LOCALAPPDATA%"), "PACHECO SOLUTIONS")
+'   configuração/.env -> %APPDATA%\PACHECO SOLUTIONS
+'   banco/log         -> %LOCALAPPDATA%\PACHECO SOLUTIONS
+configDir = fso.BuildPath(EnvValue("%APPDATA%"), "PACHECO SOLUTIONS")
+dataDir = fso.BuildPath(EnvValue("%LOCALAPPDATA%"), "PACHECO SOLUTIONS")
 envFile = fso.BuildPath(configDir, ".env")
 logFile = fso.BuildPath(dataDir, "pacheco.log")
 
@@ -49,7 +49,13 @@ If Not IsServerUp(url & "/health") Then
   End If
 
   ' O cmd.exe é usado apenas para redirecionar a saída para o log.
-  cmd = "cmd.exe /c """ & exePath & """ >> """ & logFile & """ 2>&1"
+  ' Usa o caminho completo de %COMSPEC% para não depender do PATH.
+  ' As aspas duplas em volta do comando inteiro são a forma correta do
+  ' cmd /c quando o executável está entre aspas (evita perder a 1ª aspa).
+  comspec = EnvValue("%COMSPEC%")
+  If Len(comspec) = 0 Or comspec = "%COMSPEC%" Then comspec = "cmd.exe"
+  cmd = comspec & " /c " & Chr(34) & Chr(34) & exePath & Chr(34) & _
+    " > " & Chr(34) & logFile & Chr(34) & " 2>&1" & Chr(34)
   On Error Resume Next
   sh.Run cmd, 0, False
   If Err.Number <> 0 Then
@@ -58,9 +64,9 @@ If Not IsServerUp(url & "/health") Then
   End If
   On Error GoTo 0
 
-  ' Aguarda até 30 segundos pela resposta do /health
+  ' Aguarda até 20 segundos pela resposta do /health
   ok = False
-  For i = 1 To 60
+  For i = 1 To 40
     WScript.Sleep 500
     If IsServerUp(url & "/health") Then
       ok = True
@@ -89,7 +95,17 @@ End If
 
 WScript.Quit 0
 
-' ── Rotinas auxiliares ─────────────────────────────────────────
+' -- Rotinas auxiliares -----------------------------------------
+
+Function EnvValue(name)
+  Dim value, nul
+  value = sh.ExpandEnvironmentStrings(name)
+  ' Alguns ambientes (ex.: Wine) devolvem um NUL no fim da string;
+  ' removê-lo é inofensivo no Windows e evita truncamento no Run.
+  nul = InStr(value, Chr(0))
+  If nul > 0 Then value = Left(value, nul - 1)
+  EnvValue = Trim(value)
+End Function
 
 Sub EnsureFolder(path)
   If Not fso.FolderExists(path) Then
@@ -144,6 +160,10 @@ Function IsServerUp(healthUrl)
     Err.Clear
     Exit Function
   End If
+
+  ' Evita travar por muito tempo se a porta estiver ocupada por outro programa
+  http.setTimeouts 1000, 1000, 1000, 1000
+  Err.Clear
 
   http.Open "GET", healthUrl, False
   http.Send
